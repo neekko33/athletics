@@ -20,14 +20,14 @@
             <!-- 顶部操作栏 -->
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-2xl font-bold">日程安排</h3>
-{{--                <div class="flex space-x-2">--}}
-{{--                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}" class="btn btn-secondary">--}}
-{{--                        批量添加--}}
-{{--                    </a>--}}
-{{--                    <a href="{{ route('competitions.schedules.create', $competition) }}" class="btn btn-primary">--}}
-{{--                        单个添加--}}
-{{--                    </a>--}}
-{{--                </div>--}}
+                {{--                <div class="flex space-x-2"> --}}
+                {{--                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}" class="btn btn-secondary"> --}}
+                {{--                        批量添加 --}}
+                {{--                    </a> --}}
+                {{--                    <a href="{{ route('competitions.schedules.create', $competition) }}" class="btn btn-primary"> --}}
+                {{--                        单个添加 --}}
+                {{--                    </a> --}}
+                {{--                </div> --}}
             </div>
             @if ($schedules->count() > 0)
                 <!-- 日程列表 -->
@@ -44,7 +44,8 @@
                                 <span class="ml-auto text-sm font-normal text-gray-500 mr-4">
                                     共 {{ $daySchedules->count() }} 场比赛
                                 </span>
-                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{$date}}" class="btn btn-secondary">
+                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{ $date }}"
+                                    class="btn btn-secondary">
                                     批量添加
                                 </a>
                             </h4>
@@ -112,8 +113,9 @@
                 <div class="text-center py-12">
                     <p class="text-gray-500 text-lg mb-4">暂无日程安排</p>
                     <p class="text-gray-400 text-sm mb-6">请先生成径赛分组，然后为每个分组安排时间</p>
-                    <a href="{{ route('competitions.schedules.create', $competition) }}" class="btn btn-primary">
-                        添加日程
+                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}"
+                        class="btn btn-secondary">
+                        批量添加
                     </a>
                 </div>
             @endif
