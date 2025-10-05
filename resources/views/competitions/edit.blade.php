@@ -96,7 +96,7 @@
                 </div>
 
                 <div class="card-actions justify-end mt-6">
-                    <a href="{{ route('competitions.show', $competition) }}" class="btn btn-ghost">取消</a>
+                    <a href="{{ route('competitions.index') }}" class="btn btn-ghost">取消</a>
                     <button type="submit" class="btn btn-primary">保存更改</button>
                 </div>
             </form>
