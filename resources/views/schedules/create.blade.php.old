@@ -1,0 +1,119 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ $competition->name }} - 添加日程
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold mb-6">添加日程</h3>
+
+                    <form action="{{ route('competitions.schedules.store', $competition) }}" 
+                          method="POST">
+                        @csrf
+
+                        <!-- 选择分组 -->
+                        <div class="mb-5">
+                            <label for="heat_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                选择分组 <span class="text-red-500">*</span>
+                            </label>
+                            <select name="heat_id" 
+                                    id="heat_id" 
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('heat_id') border-red-500 @enderror"
+                                    required>
+                                <option value="">-- 请选择 --</option>
+                                @foreach($availableHeats as $availableHeat)
+                                    <option value="{{ $availableHeat->id }}" 
+                                            {{ (old('heat_id', $heat?->id) == $availableHeat->id) ? 'selected' : '' }}>
+                                        {{ $availableHeat->grade->name }} - {{ $availableHeat->competitionEvent->event->name }} ({{ $availableHeat->competitionEvent->event->gender }}) - 第{{ $availableHeat->heat_number }}组
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('heat_id')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- 开始时间 -->
+                        <div class="mb-5">
+                            <label for="scheduled_at" class="block text-sm font-medium text-gray-700 mb-2">
+                                开始时间 <span class="text-red-500">*</span>
+                            </label>
+                            <input type="datetime-local" 
+                                   name="scheduled_at" 
+                                   id="scheduled_at"
+                                   value="{{ old('scheduled_at', $competition->start_date->format('Y-m-d') . 'T08:00') }}"
+                                   class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('scheduled_at') border-red-500 @enderror"
+                                   required>
+                            @error('scheduled_at')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- 结束时间 -->
+                        <div class="mb-5">
+                            <label for="end_at" class="block text-sm font-medium text-gray-700 mb-2">
+                                结束时间
+                            </label>
+                            <input type="datetime-local" 
+                                   name="end_at" 
+                                   id="end_at"
+                                   value="{{ old('end_at') }}"
+                                   class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('end_at') border-red-500 @enderror">
+                            @error('end_at')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                            <p class="mt-1 text-sm text-gray-500">留空则不设置结束时间</p>
+                        </div>
+
+                        <!-- 场地 -->
+                        <div class="mb-5">
+                            <label for="venue" class="block text-sm font-medium text-gray-700 mb-2">
+                                场地
+                            </label>
+                            <input type="text" 
+                                   name="venue" 
+                                   id="venue"
+                                   value="{{ old('venue') }}"
+                                   placeholder="例如：田径场"
+                                   class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('venue') border-red-500 @enderror">
+                            @error('venue')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- 备注 -->
+                        <div class="mb-5">
+                            <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+                                备注
+                            </label>
+                            <textarea name="notes" 
+                                      id="notes"
+                                      rows="3"
+                                      placeholder="其他说明信息"
+                                      class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 @error('notes') border-red-500 @enderror">{{ old('notes') }}</textarea>
+                            @error('notes')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- 按钮 -->
+                        <div class="flex justify-end space-x-2 mt-6">
+                            <a href="{{ route('competitions.schedules.index', $competition) }}" 
+                               class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                                取消
+                            </a>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                添加
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

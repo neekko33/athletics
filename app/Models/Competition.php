@@ -51,9 +51,10 @@ class Competition extends Model
 
     public function schedules()
     {
-        return $this->hasManyThrough(Schedule::class, Heat::class, 'competition_event_id', 'heat_id', 'id', 'id')
-            ->join('competition_events', 'heats.competition_event_id', '=', 'competition_events.id')
-            ->where('competition_events.competition_id', $this->id);
+        return Schedule::query()
+            ->whereHas('heat.competitionEvent', function ($q) {
+                $q->where('competition_id', $this->id);
+            });
     }
 
     public function getCompetitionDatesAttribute(): array
@@ -61,7 +62,7 @@ class Competition extends Model
         if (!$this->start_date || !$this->end_date) {
             return [];
         }
-        
+
         $dates = [];
         $current = $this->start_date->copy();
         while ($current->lte($this->end_date)) {

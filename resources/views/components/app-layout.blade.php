@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', '运动会管理系统')</title>
+    <title>{{ $title ?? '运动会管理系统' }}</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('images/icon.svg') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -68,7 +68,14 @@
                     </div>
                 @endif
 
-                @yield('content')
+                <!-- Header slot if provided -->
+                @if(isset($header))
+                    <div class="mb-6">
+                        {{ $header }}
+                    </div>
+                @endif
+
+                {{ $slot }}
             </div>
         </div>
     </div>
