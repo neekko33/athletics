@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CompetitionController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AthleteController;
@@ -8,17 +9,24 @@ use App\Http\Controllers\HeatController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\EventController;
 
-Route::get('/', [CompetitionController::class, 'index'])->name('home');
+// 登录路由（不需要认证）
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login')->middleware('guest');
+Route::post('/login', [AuthController::class, 'login'])->middleware('guest');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-Route::resource('competitions', CompetitionController::class);
-Route::post('competitions/{competition}/generate-schedule-book', [CompetitionController::class, 'generateScheduleBook'])
-    ->name('competitions.generate-schedule-book');
+// 所有其他路由都需要认证
+Route::middleware('auth')->group(function () {
+    Route::get('/', [CompetitionController::class, 'index'])->name('home');
 
-Route::resource('events', EventController::class);
+    Route::resource('competitions', CompetitionController::class);
+    Route::post('competitions/{competition}/generate-schedule-book', [CompetitionController::class, 'generateScheduleBook'])
+        ->name('competitions.generate-schedule-book');
 
-Route::prefix('competitions/{competition}')->name('competitions.')->group(function () {
-    // Grades
-    Route::resource('grades', GradeController::class)->except(['show']);
+    Route::resource('events', EventController::class);
+
+    Route::prefix('competitions/{competition}')->name('competitions.')->group(function () {
+        // Grades
+        Route::resource('grades', GradeController::class)->except(['show']);
 
     // Athletes
     Route::prefix('athletes')->name('athletes.')->group(function () {
@@ -56,4 +64,6 @@ Route::prefix('competitions/{competition}')->name('competitions.')->group(functi
         Route::post('/bulk-create', [ScheduleController::class, 'bulkCreate'])->name('bulk-create');
         Route::get('/print', [ScheduleController::class, 'print'])->name('print');
     });
+});
+// 结束认证保护的路由组
 });

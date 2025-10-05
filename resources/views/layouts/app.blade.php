@@ -21,7 +21,7 @@
                 <img src="{{ asset('images/icon.png') }}" alt="Logo" class="h-8 w-8">
                 <h1 class="text-xl font-bold">Athletics</h1>
             </div>
-            <ul class="flex space-x-6 h-full">
+            <ul class="flex space-x-6 h-full flex-1">
                 <li class="h-full">
                     <a href="{{ route('competitions.index') }}"
                        class="{{ request()->routeIs('competitions.*') ? 'font-bold' : '' }} h-full flex items-center justify-center px-2 hover:bg-gray-100 rounded-md">运动会管理</a>
@@ -31,6 +31,42 @@
                        class="{{ request()->routeIs('events.*') ? 'font-bold' : '' }} h-full flex items-center justify-center px-2 hover:bg-gray-100 rounded-md">比赛项目管理</a>
                 </li>
             </ul>
+
+            <!-- 用户信息和登出 -->
+            <div class="flex items-center gap-4 px-4">
+                <div class="dropdown dropdown-end">
+                    <label tabindex="0" class="btn btn-ghost btn-circle avatar placeholder">
+                        <div class="bg-primary text-primary-content rounded-full w-10">
+                            <span class="text-sm">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</span>
+                        </div>
+                    </label>
+                    <ul tabindex="0" class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
+                        <li class="menu-title">
+                            <span class="text-base font-semibold">{{ Auth::user()->name }}</span>
+                        </li>
+                        <li class="disabled">
+                            <a class="text-xs text-gray-500">{{ Auth::user()->email }}</a>
+                        </li>
+                        @if(Auth::user()->last_login_at)
+                            <li class="disabled">
+                                <a class="text-xs text-gray-500">上次登录：{{ Auth::user()->last_login_at->diffForHumans() }}</a>
+                            </li>
+                        @endif
+                        <div class="divider my-1"></div>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST" class="w-full">
+                                @csrf
+                                <button type="submit" class="w-full text-left text-error flex space-x-2 items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                    </svg>
+                                    <span>退出登录</span>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
         <!-- Page content -->
