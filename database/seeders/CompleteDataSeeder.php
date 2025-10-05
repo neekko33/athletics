@@ -74,21 +74,12 @@ class CompleteDataSeeder extends Seeder
         }
 
         echo "✅ " . Event::count() . " 个比赛项目已成功导入。\n";
-
-        // 插入测试用户
-        User::create([
-            'name' => 'Test User',
-            'email' => 'neekko33@gmail.com',
-            'password' => bcrypt('password'),
-        ]);
-        echo "✅ 测试用户已创建，邮箱：neekko33@gmail.com，密码：password\n";
-
         // 创建测试运动会
         echo "\n🏃 创建测试运动会数据...\n";
         $competition = Competition::create([
             'name' => '2025年秋季运动会',
             'start_date' => '2025-10-15',
-            'end_date' => '2025-10-17',
+            'end_date' => '2025-10-16',
             'track_lanes' => 6,
         ]);
         echo "✅ 运动会创建成功: {$competition->name}\n";
