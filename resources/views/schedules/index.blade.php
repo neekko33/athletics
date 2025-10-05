@@ -20,14 +20,14 @@
             <!-- 顶部操作栏 -->
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-2xl font-bold">日程安排</h3>
-                <div class="flex space-x-2">
-                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}" class="btn btn-secondary">
-                        批量添加
-                    </a>
-                    <a href="{{ route('competitions.schedules.create', $competition) }}" class="btn btn-primary">
-                        单个添加
-                    </a>
-                </div>
+{{--                <div class="flex space-x-2">--}}
+{{--                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}" class="btn btn-secondary">--}}
+{{--                        批量添加--}}
+{{--                    </a>--}}
+{{--                    <a href="{{ route('competitions.schedules.create', $competition) }}" class="btn btn-primary">--}}
+{{--                        单个添加--}}
+{{--                    </a>--}}
+{{--                </div>--}}
             </div>
             @if ($schedules->count() > 0)
                 <!-- 日程列表 -->
@@ -41,11 +41,13 @@
                                 <span class="text-gray-600 text-base font-normal">
                                     星期{{ ['日', '一', '二', '三', '四', '五', '六'][\Carbon\Carbon::parse($date)->dayOfWeek] }}
                                 </span>
-                                <span class="ml-auto text-sm font-normal text-gray-500">
+                                <span class="ml-auto text-sm font-normal text-gray-500 mr-4">
                                     共 {{ $daySchedules->count() }} 场比赛
                                 </span>
+                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{$date}}" class="btn btn-secondary">
+                                    批量添加
+                                </a>
                             </h4>
-
                             <table class="table w-full">
                                 <thead>
                                     <tr>

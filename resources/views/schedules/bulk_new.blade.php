@@ -30,14 +30,14 @@
             <div class="text-center py-12">
                 <p class="text-gray-500 text-lg mb-4">没有可批量安排的项目</p>
                 <p class="text-gray-400 text-sm mb-6">所有分组都已安排时间</p>
-                <a href="{{ route('competitions.schedules.index', $competition) }}" 
+                <a href="{{ route('competitions.schedules.index', $competition) }}"
                    class="btn btn-primary">
                     返回日程列表
                 </a>
             </div>
         @else
-            <form action="{{ route('competitions.schedules.bulk-create', $competition) }}" 
-                  method="POST" 
+            <form action="{{ route('competitions.schedules.bulk-create', $competition) }}"
+                  method="POST"
                   id="bulk-schedule-form"
                   class="contents">
                 @csrf
@@ -47,9 +47,9 @@
                     <label for="group_select" class="label">
                         <span class="label-text">选择比赛分组</span>
                     </label>
-                    <select name="group_select" 
-                            id="group-select" 
-                            class="select select-bordered w-full mt-2" 
+                    <select name="group_select"
+                            id="group-select"
+                            class="select select-bordered w-full mt-2"
                             required>
                         <option value="">-- 请选择 --</option>
                         @foreach($groupedHeats as $key => $item)
@@ -57,8 +57,8 @@
                                 $data = $item['data'];
                                 $heats = $item['heats'];
                             @endphp
-                            <option value="{{ $data['grade_id'] }}|{{ $data['event_id'] }}|{{ $data['gender'] }}|{{ $data['avg_time'] }}" 
-                                    data-heats-count="{{ $heats->count() }}" 
+                            <option value="{{ $data['grade_id'] }}|{{ $data['event_id'] }}|{{ $data['gender'] }}|{{ $data['avg_time'] }}"
+                                    data-heats-count="{{ $heats->count() }}"
                                     data-avg-time="{{ $data['avg_time'] }}">
                                 {{ $data['grade_name'] }} - {{ $data['event_name'] }} ({{ $data['gender'] }}) - {{ $heats->count() }} 个分组
                             </option>
@@ -100,13 +100,13 @@
                     <label for="start_date" class="label">
                         <span class="label-text">开始日期</span>
                     </label>
-                    <input type="date" 
-                           name="start_date" 
+                    <input type="date"
+                           name="start_date"
                            id="start_date"
-                           value="{{ ($competition->start_date <= now() && $competition->end_date >= now()) ? now()->format('Y-m-d') : $competition->start_date->format('Y-m-d') }}"
+                           value="{{ request('date') ?? $competition->start_date->format('Y-m-d') }}"
                            min="{{ $competition->start_date->format('Y-m-d') }}"
                            max="{{ $competition->end_date->format('Y-m-d') }}"
-                           class="input input-bordered block mt-2 w-full" 
+                           class="input input-bordered block mt-2 w-full"
                            required>
                 </div>
 
@@ -115,11 +115,11 @@
                     <label for="start_time" class="label">
                         <span class="label-text">开始时间</span>
                     </label>
-                    <input type="time" 
-                           name="start_time" 
+                    <input type="time"
+                           name="start_time"
                            id="start_time"
                            value="08:00"
-                           class="input input-bordered block mt-2 w-full" 
+                           class="input input-bordered block mt-2 w-full"
                            required>
                 </div>
 
@@ -141,8 +141,8 @@
                     <label for="venue" class="label">
                         <span class="label-text">场地</span>
                     </label>
-                    <input type="text" 
-                           name="venue" 
+                    <input type="text"
+                           name="venue"
                            id="venue"
                            placeholder="例如：田径场"
                            class="input input-bordered block mt-2 w-full">
@@ -153,17 +153,17 @@
                     <label for="notes" class="label">
                         <span class="label-text">备注</span>
                     </label>
-                    <textarea name="notes" 
+                    <textarea name="notes"
                               id="notes"
                               placeholder="其他说明信息"
-                              class="textarea textarea-bordered block mt-2 w-full" 
+                              class="textarea textarea-bordered block mt-2 w-full"
                               rows="3"></textarea>
                 </div>
 
                 <!-- 提交按钮 -->
                 <div class="inline mt-6">
                     <button type="submit" class="btn btn-primary mr-2">批量添加</button>
-                    <a href="{{ route('competitions.schedules.index', $competition) }}" 
+                    <a href="{{ route('competitions.schedules.index', $competition) }}"
                        class="btn">取消</a>
                 </div>
             </form>
@@ -190,25 +190,25 @@
 
                     function updatePreview() {
                         const selectedOption = groupSelect.options[groupSelect.selectedIndex];
-                        
+
                         if (selectedOption.value) {
                             // 解析选中的值: grade_id|event_id|gender|avg_time
                             const [gradeId, eventId, gender, avgTime] = selectedOption.value.split('|');
                             const heatsCount = parseInt(selectedOption.dataset.heatsCount);
-                            
+
                             // 设置隐藏字段
                             gradeIdInput.value = gradeId;
                             eventIdInput.value = eventId;
                             genderInput.value = gender;
                             avgTimeInput.value = avgTime;
-                            
+
                             console.log('Hidden fields set:', {
                                 grade_id: gradeIdInput.value,
                                 event_id: eventIdInput.value,
                                 gender: genderInput.value,
                                 avg_time: avgTimeInput.value
                             });
-                            
+
                             // 显示分组列表
                             heatsPreview.classList.remove('hidden');
                             document.querySelectorAll('.heats-list').forEach(list => {
@@ -219,7 +219,7 @@
                             if (targetList) {
                                 targetList.classList.remove('hidden');
                             }
-                            
+
                             // 更新时间预览
                             updateTimePreview(heatsCount, parseInt(avgTime));
                         } else {
@@ -246,7 +246,7 @@
                         document.getElementById('preview-start').textContent = startDateTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
                         document.getElementById('preview-end').textContent = endDateTime.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
                         document.getElementById('preview-avg-time').textContent = avgTime;
-                        
+
                         timePreview.classList.remove('hidden');
                     }
 
