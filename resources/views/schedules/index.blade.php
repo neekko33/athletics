@@ -66,19 +66,21 @@
                                     @foreach ($daySchedules as $schedule)
                                         <tr class="hover">
                                             <td class="whitespace-nowrap">
-                                                <div class="font-medium">{{ $schedule->scheduled_at->format('H:i') }}</div>
-                                                @if ($schedule->end_at)
-                                                    <div class="text-sm text-gray-500">
-                                                        至 {{ $schedule->end_at->format('H:i') }}
+                                                <div class="flex gap-1">
+                                                    <div class="font-medium">{{ $schedule->scheduled_at->format('H:i') }}
                                                     </div>
-                                                @endif
+                                                    @if ($schedule->end_at)
+                                                        <div class="text-sm text-gray-500">
+                                                            ~ {{ $schedule->end_at->format('H:i') }}
+                                                        </div>
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td>
                                                 <div>
                                                     <p class="font-medium">
+                                                        {{ $schedule->heat->competitionEvent->event->gender }}子
                                                         {{ $schedule->heat->competitionEvent->event->name }}</p>
-                                                    <p class="text-sm text-gray-500">
-                                                        {{ $schedule->heat->competitionEvent->event->gender }}</p>
                                                 </div>
                                             </td>
                                             <td>{{ $schedule->heat->grade->name }} 第 {{ $schedule->heat->heat_number }} 组

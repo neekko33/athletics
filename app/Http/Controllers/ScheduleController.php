@@ -295,6 +295,7 @@ class ScheduleController extends Controller
 
         $text = '';
 
+
         // 竞赛日程部分
         foreach ($schedulesByDate as $date => $daySchedules) {
             $text .= "竞 赛 日 程\n";
@@ -314,16 +315,22 @@ class ScheduleController extends Controller
             // 径赛
             if ($trackSchedules->count() > 0) {
                 $text .= "径        赛\n";
-                foreach ($trackSchedules as $index => $schedule) {
-                    $event = $schedule->heat->competitionEvent->event;
-                    $heat = $schedule->heat;
-                    $participantCount = $heat->lanes->count();
-                    $takeCount = ceil($participantCount * 0.6);
-                    $genderText = $event->gender === '男' ? '男子组' : ($event->gender === '女' ? '女子组' : $event->gender . '组');
-                    $gradeName = $heat->grade ? $heat->grade->name : '';
-                    $eventName = $gradeName ? "{$gradeName}{$genderText}{$event->name}" : "{$event->name}({$event->gender})";
 
-                    $text .= ($index + 1) . "、{$eventName}预决赛     {$participantCount}人{$heat->heat_number}组  取 {$takeCount}名   " . $schedule->scheduled_at->format('G:i') . "\n";
+                // 同一年级同一性别的同一项目需要合并显示
+                $groupedTrackSchedules = $trackSchedules->groupBy(function ($schedule) {
+                    $event = $schedule->heat->competitionEvent->event;
+                    $gradeName = $schedule->heat->grade ? $schedule->heat->grade->name : '';
+                    $genderText = $event->gender === '男' ? '男子组' : ($event->gender === '女' ? '女子组' : $event->gender . '组');
+                    return $gradeName ? "{$gradeName}{$genderText}{$event->name}" : "{$event->name}({$event->gender})";
+                });
+
+                $startIndex = 1;
+                foreach ($groupedTrackSchedules as $eventName => $groupedSchedules) {
+                    $participantCount = $groupedSchedules->sum(fn($s) => $s->heat->lanes->count());
+                    $groupCount = $groupedSchedules->count();
+                    $takeCount = ceil($participantCount * 0.6);
+                    $firstSchedule = $groupedSchedules->first();
+                    $text .= ($startIndex++) . "、{$eventName}预决赛  {$participantCount}人{$groupCount}组  取{$takeCount}名  " . $firstSchedule->scheduled_at->format('G:i') . "\n";
                 }
             }
 
@@ -339,16 +346,20 @@ class ScheduleController extends Controller
                     $gradeName = $heat->grade ? $heat->grade->name : '';
                     $eventName = $gradeName ? "{$gradeName}{$genderText}{$event->name}" : "{$event->name}({$event->gender})";
 
-                    $text .= ($index + 1) . "、{$eventName}预决赛       {$participantCount}人      取{$takeCount}名   " . $schedule->scheduled_at->format('G:i') . "\n";
+                    $text .= ($index + 1) . "、{$eventName}预决赛  {$participantCount}人  取{$takeCount}名  " . $schedule->scheduled_at->format('G:i') . "\n";
                 }
             }
         }
-
         // 各班级名单
         $text .= "\n各 班 级 名 单\n\n";
         foreach ($grades as $grade) {
             $text .= "{$grade->name}组\n";
-            foreach ($grade->klasses->sortBy('name') as $klass) {
+            foreach (
+                $grade->klasses->sortBy(function ($klass) {
+                    // 将班级名的汉字转换为数字用于排序
+                    return ChineseHelper::chineseClassNameToNumber($klass->name);
+                }) as $klass
+            ) {
                 $athletes = $klass->athletes->sortBy('number');
                 if ($athletes->count() > 0) {
                     $text .= ChineseHelper::classNameToChinese($klass->name) . "\n";
@@ -362,24 +373,34 @@ class ScheduleController extends Controller
         // 竞赛分组
         $text .= "\n竞 赛 分 组\n\n";
 
+
         $heatsByGradeGender = $schedules
             ->pluck('heat')
             ->unique('id')
             ->groupBy(function ($heat) {
                 $event = $heat->competitionEvent->event;
                 return ($heat->grade->name ?? '其他') . '|' . $event->gender . '|' . $event->event_type;
-            })
-            ->sortKeys();
+            });
+
+        // 按年级顺序排序分组
+        $heatsByGradeGender = $heatsByGradeGender->sortBy(function ($heats, $key) use ($grades) {
+            [$gradeName, $gender, $eventType] = explode('|', $key);
+            $gradeOrder = $grades->firstWhere('name', $gradeName)?->order ?? 999;
+            $genderOrder = $gender === '男' ? 0 : ($gender === '女' ? 1 : 2);
+            $eventTypeOrder = $eventType === 'track' ? 0 : 1;
+            return [$gradeOrder, $genderOrder, $eventTypeOrder];
+        });
 
         foreach ($heatsByGradeGender as $key => $gradeHeats) {
             [$gradeName, $gender, $eventType] = explode('|', $key);
             $genderText = $gender === '男' ? '男子组' : '女子组';
             $eventTypeText = $eventType === 'track' ? '径赛' : '田赛';
 
-            $text .= "{$gradeName} {$genderText} {$eventTypeText}\n";
+            $text .= "\n{$gradeName} {$genderText} {$eventTypeText}\n";
 
             $heatsByEvent = $gradeHeats->groupBy(fn($h) => $h->competitionEvent->event->id);
 
+            $startIndex = 1;
             foreach ($heatsByEvent as $eventId => $eventHeats) {
                 $event = $eventHeats->first()->competitionEvent->event;
                 $eventHeatsSorted = $eventHeats->sortBy('heat_number');
@@ -387,7 +408,7 @@ class ScheduleController extends Controller
                 $totalGroups = $eventHeatsSorted->count();
                 $takeCount = ceil($totalParticipants * 0.6);
 
-                $text .= $eventHeats->keys()->search($eventId) + 1 . "、{$event->name}预决赛，{$totalParticipants}人{$totalGroups}组，取{$takeCount}名\n";
+                $text .=  ($startIndex++) . "、{$event->name}预决赛，{$totalParticipants}人{$totalGroups}组，取{$takeCount}名\n";
 
                 foreach ($eventHeatsSorted as $heat) {
                     $text .= "第" . ChineseHelper::numberToChinese($heat->heat_number) . "组\n";
