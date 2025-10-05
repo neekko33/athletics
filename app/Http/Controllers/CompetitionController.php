@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Competition;
 use App\Models\Event;
+use App\Services\ScheduleBookService;
 use Illuminate\Http\Request;
 
 class CompetitionController extends Controller
@@ -93,5 +94,24 @@ class CompetitionController extends Controller
 
         return redirect()->route('competitions.index')
             ->with('success', '运动会删除成功');
+    }
+
+    /**
+     * 生成秩序册
+     */
+    public function generateScheduleBook(Competition $competition, ScheduleBookService $service)
+    {
+        try {
+            $fileName = $service->generate($competition);
+
+            $filePath = storage_path('app/public/schedules/' . $fileName);
+
+            return response()->download($filePath, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ])->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            return back()->with('error', '生成秩序册失败：' . $e->getMessage());
+        }
     }
 }

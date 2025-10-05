@@ -15,7 +15,7 @@
         </ul>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <div class="mb-6">
                 <h2 class="card-title text-2xl">
@@ -54,7 +54,7 @@
                                         <div class="bg-white rounded p-2">
                                             <p class="font-medium">{{ $laneAthlete->athlete->name }}</p>
                                             <p class="text-sm text-gray-600">
-                                                {{ $laneAthlete->athlete->klass->grade->name }} 
+                                                {{ $laneAthlete->athlete->klass->grade->name }}
                                                 {{ $laneAthlete->athlete->klass->name }}
                                             </p>
                                             @if($laneAthlete->athlete->number)
@@ -86,7 +86,7 @@
                                             <div class="bg-white rounded p-2">
                                                 <p class="font-medium">{{ $laneAthlete->athlete->name }}</p>
                                                 <p class="text-sm text-gray-600">
-                                                    {{ $laneAthlete->athlete->klass->grade->name }} 
+                                                    {{ $laneAthlete->athlete->klass->grade->name }}
                                                     {{ $laneAthlete->athlete->klass->name }}
                                                 </p>
                                                 @if($laneAthlete->relay_position)

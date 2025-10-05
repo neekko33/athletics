@@ -10,8 +10,8 @@
             <ul>
                 <li><a href="{{ route('competitions.heats.index', $competition) }}">返回分组列表</a></li>
                 <li class="text-gray-600">
-                    {{ $competitionEvent->event->name }} - 
-                    {{ $heat->grade->name }} - 
+                    {{ $competitionEvent->event->name }} -
+                    {{ $heat->grade->name }} -
                     第{{ $heat->heat_number }}组
                 </li>
             </ul>
@@ -25,10 +25,10 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- 左侧：当前分组运动员 -->
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h2 class="card-title">当前分组运动员</h2>
-                
+
                 <div class="overflow-x-auto">
                     <table class="table table-zebra">
                         <thead>
@@ -51,8 +51,8 @@
                                         <td>{{ $laneAthlete->athlete->name }}</td>
                                         <td>{{ $laneAthlete->athlete->klass->name }}</td>
                                         <td>
-                                            <form action="{{ route('competitions.heats.update', [$competition, $heat]) }}" 
-                                                  method="POST" 
+                                            <form action="{{ route('competitions.heats.update', [$competition, $heat]) }}"
+                                                  method="POST"
                                                   class="inline"
                                                   onsubmit="return confirm('确定要移除该运动员吗？');">
                                                 @csrf
@@ -77,7 +77,7 @@
 
                 @if(!$isFieldEvent)
                     <div class="divider">{{ $isFieldEvent ? '位置布局预览' : '赛道布局预览' }}</div>
-                    
+
                     <!-- 赛道可视化 -->
                     <div class="grid grid-cols-6 gap-2">
                         @for($i = 1; $i <= $heat->total_lanes; $i++)
@@ -110,28 +110,28 @@
         </div>
 
         <!-- 右侧：添加运动员 -->
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h2 class="card-title">从其他分组添加运动员</h2>
                 <p class="text-sm text-gray-600 mb-2">
                     限制：同年级 ({{ $heat->grade->name }})、同项目、同性别
                 </p>
-                
+
                 @if($availableAthletes->isNotEmpty() || $ungroupedAthletes->isNotEmpty())
-                    <form action="{{ route('competitions.heats.update', [$competition, $heat]) }}" 
-                          method="POST" 
+                    <form action="{{ route('competitions.heats.update', [$competition, $heat]) }}"
+                          method="POST"
                           id="addAthleteForm">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="action_type" value="add_athlete">
-                        
+
                         <div class="form-control mb-4">
                             <label class="label">
                                 <span class="label-text">选择运动员</span>
                             </label>
                             <select name="athlete_id" class="select select-bordered" required id="athlete_select">
                                 <option value="">-- 请选择 --</option>
-                                
+
                                 @if($ungroupedAthletes->isNotEmpty())
                                     <optgroup label="⚠️ 已报名但未分组">
                                         @foreach($ungroupedAthletes as $athlete)
@@ -141,7 +141,7 @@
                                         @endforeach
                                     </optgroup>
                                 @endif
-                                
+
                                 @if($availableAthletes->isNotEmpty())
                                     <optgroup label="📋 其他分组的运动员">
                                         @foreach($availableAthletes as $athlete)
@@ -195,7 +195,7 @@
                                 @endfor
                             </select>
                         </div>
-                        
+
                         @if($isRelay)
                             <div class="form-control mb-4">
                                 <label class="label">
@@ -213,18 +213,18 @@
                                     </span>
                                 </label>
                             </div>
-                            
+
                             <!-- 显示所选赛道的棒次占用情况 -->
                             <div id="lane_status" class="alert alert-info text-sm mb-4" style="display: none;">
                                 <div id="lane_status_content"></div>
                             </div>
-                            
+
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
                                     const laneSelect = document.getElementById('lane_select');
                                     const laneStatus = document.getElementById('lane_status');
                                     const laneStatusContent = document.getElementById('lane_status_content');
-                                    
+
                                     // 赛道占用情况数据
                                     const laneData = {
                                         @foreach($heat->lanes as $lane)
@@ -235,7 +235,7 @@
                                             ],
                                         @endforeach
                                     };
-                                    
+
                                     laneSelect.addEventListener('change', function() {
                                         const laneNum = parseInt(this.value);
                                         if (laneNum && laneData[laneNum]) {
@@ -296,7 +296,7 @@
                                         </tr>
                                     @endforeach
                                 @endif
-                                
+
                                 @if($availableAthletes->isNotEmpty())
                                     <tr class="bg-base-200">
                                         <td colspan="3" class="font-bold text-xs">其他分组的运动员</td>

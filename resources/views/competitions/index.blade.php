@@ -24,20 +24,20 @@
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach($competitions as $competition)
-                <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
+                <div class="card bg-base-100 shadow-sm">
                     <div class="card-body">
                         <h3 class="card-title">{{ $competition->name }}</h3>
                         <div class="space-y-2 text-sm">
                             <p>
-                                <span class="font-semibold">开始日期:</span> 
+                                <span class="font-semibold">开始日期:</span>
                                 {{ $competition->start_date->format('Y年m月d日') }}
                             </p>
                             <p>
-                                <span class="font-semibold">结束日期:</span> 
+                                <span class="font-semibold">结束日期:</span>
                                 {{ $competition->end_date->format('Y年m月d日') }}
                             </p>
                             <p>
-                                <span class="font-semibold">赛道数:</span> 
+                                <span class="font-semibold">赛道数:</span>
                                 {{ $competition->track_lanes }}条
                             </p>
                         </div>

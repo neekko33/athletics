@@ -6,19 +6,19 @@
 <div class="container mx-auto max-w-2xl">
     <h2 class="text-3xl font-bold mb-6">创建年级</h2>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <form action="{{ route('competitions.grades.store', $competition) }}" method="POST">
                 @csrf
-                
+
                 <div class="form-control w-full">
                     <label class="label">
                         <span class="label-text font-semibold">年级名称 *</span>
                     </label>
-                    <input type="text" 
-                           name="name" 
-                           value="{{ old('name') }}" 
-                           class="input input-bordered w-full @error('name') input-error @enderror" 
+                    <input type="text"
+                           name="name"
+                           value="{{ old('name') }}"
+                           class="input input-bordered w-full @error('name') input-error @enderror"
                            placeholder="例如：一年级、初一、高一"
                            required
                            autofocus>

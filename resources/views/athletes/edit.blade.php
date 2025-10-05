@@ -15,7 +15,7 @@
         </ul>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <h2 class="card-title text-2xl mb-4">编辑运动员</h2>
 
@@ -27,8 +27,8 @@
                     <label class="label">
                         <span class="label-text font-semibold">姓名 *</span>
                     </label>
-                    <input type="text" name="name" value="{{ old('name', $athlete->name) }}" 
-                           class="input input-bordered @error('name') input-error @enderror" 
+                    <input type="text" name="name" value="{{ old('name', $athlete->name) }}"
+                           class="input input-bordered @error('name') input-error @enderror"
                            placeholder="请输入运动员姓名" required>
                     @error('name')
                         <label class="label">
@@ -41,7 +41,7 @@
                     <label class="label">
                         <span class="label-text font-semibold">性别 *</span>
                     </label>
-                    <select name="gender" id="genderSelect" 
+                    <select name="gender" id="genderSelect"
                             class="select select-bordered @error('gender') select-error @enderror" required>
                         <option value="">请选择性别</option>
                         <option value="男" {{ old('gender', $athlete->gender) === '男' ? 'selected' : '' }}>男</option>
@@ -58,8 +58,8 @@
                     <label class="label">
                         <span class="label-text font-semibold">班级 *</span>
                     </label>
-                    <input type="text" name="klass_name" value="{{ old('klass_name', $athlete->klass->name) }}" 
-                           class="input input-bordered @error('klass_name') input-error @enderror" 
+                    <input type="text" name="klass_name" value="{{ old('klass_name', $athlete->klass->name) }}"
+                           class="input input-bordered @error('klass_name') input-error @enderror"
                            placeholder="例如: 1班" required>
                     <label class="label">
                         <span class="label-text-alt text-gray-500">当前年级: {{ $grade->name }}</span>
@@ -100,7 +100,7 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 @foreach($events->where('event_type', 'track') as $event)
                                     <label class="flex items-center event-item" data-gender="{{ $event->gender }}" data-type="track">
-                                        <input type="checkbox" name="event_ids[]" value="{{ $event->id }}" 
+                                        <input type="checkbox" name="event_ids[]" value="{{ $event->id }}"
                                                class="checkbox checkbox-sm mr-2"
                                                {{ in_array($event->id, $athleteEventIds) ? 'checked' : '' }}>
                                         <span class="text-sm">{{ $event->name }}</span>
@@ -115,7 +115,7 @@
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                                 @foreach($events->where('event_type', 'field') as $event)
                                     <label class="flex items-center event-item" data-gender="{{ $event->gender }}" data-type="field">
-                                        <input type="checkbox" name="event_ids[]" value="{{ $event->id }}" 
+                                        <input type="checkbox" name="event_ids[]" value="{{ $event->id }}"
                                                class="checkbox checkbox-sm mr-2"
                                                {{ in_array($event->id, $athleteEventIds) ? 'checked' : '' }}>
                                         <span class="text-sm">{{ $event->name }}</span>
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (eventGender === selectedGender) {
                 item.style.display = 'flex';
-                
+
                 if (eventType === 'track') hasTrack = true;
                 if (eventType === 'field') hasField = true;
             } else {
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     genderSelect.addEventListener('change', filterEvents);
-    
+
     // 页面加载时执行一次
     filterEvents();
 });

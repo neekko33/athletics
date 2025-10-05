@@ -15,7 +15,7 @@
         </ul>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="card-title text-2xl">参赛年级管理</h2>
@@ -70,12 +70,12 @@
                                     </td>
                                     <td>
                                         <div class="flex space-x-2">
-                                            <a href="{{ route('competitions.grades.edit', [$competition, $grade]) }}" 
+                                            <a href="{{ route('competitions.grades.edit', [$competition, $grade]) }}"
                                                class="btn btn-sm btn-ghost">
                                                 编辑
                                             </a>
-                                            <form action="{{ route('competitions.grades.destroy', [$competition, $grade]) }}" 
-                                                  method="POST" 
+                                            <form action="{{ route('competitions.grades.destroy', [$competition, $grade]) }}"
+                                                  method="POST"
                                                   class="inline"
                                                   onsubmit="return confirm('确定要删除该年级吗？删除后该年级下的所有班级和运动员也会被删除。');">
                                                 @csrf

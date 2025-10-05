@@ -15,7 +15,7 @@
         </ul>
     </div>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="card-title text-2xl">运动员列表</h2>
@@ -50,12 +50,12 @@
                 <!-- 年级选项卡 -->
                 <div role="tablist" class="tabs tabs-lifted">
                     @foreach($grades as $index => $grade)
-                        <input type="radio" name="grade_tabs" role="tab" class="tab" 
+                        <input type="radio" name="grade_tabs" role="tab" class="tab"
                                aria-label="{{ $grade->name }}" id="tab-{{ $grade->id }}"
                                {{ $index === 0 ? 'checked="checked"' : '' }} />
                         <div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
                             <div class="flex justify-end mb-4">
-                                <a href="{{ route('competitions.athletes.create', ['competition' => $competition, 'grade_id' => $grade->id]) }}" 
+                                <a href="{{ route('competitions.athletes.create', ['competition' => $competition, 'grade_id' => $grade->id]) }}"
                                    class="btn btn-primary btn-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -63,13 +63,13 @@
                                     添加运动员
                                 </a>
                             </div>
-                            
+
                             @php
                                 $gradeAthletes = $grade->klasses->flatMap(function($klass) {
                                     return $klass->athletes;
                                 });
                             @endphp
-                            
+
                             @include('athletes.table', ['athletes' => $gradeAthletes, 'competition' => $competition])
                         </div>
                     @endforeach
@@ -95,7 +95,7 @@
 <dialog id="import_modal" class="modal">
     <div class="modal-box max-w-2xl">
         <h3 class="font-bold text-lg mb-4">批量导入运动员</h3>
-        
+
         <!-- 下载模板 -->
         <div class="mb-4 p-4 bg-base-200 rounded-lg">
             <div class="flex items-center justify-between">
@@ -103,7 +103,7 @@
                     <p class="font-medium mb-1">📥 下载导入模板</p>
                     <p class="text-sm text-gray-600">使用模板可以确保数据格式正确</p>
                 </div>
-                <a href="{{ route('competitions.athletes.download-template', $competition) }}" 
+                <a href="{{ route('competitions.athletes.download-template', $competition) }}"
                    class="btn btn-sm btn-outline btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -124,7 +124,7 @@
                     <span class="label-text-alt text-gray-500">支持 .xls、.xlsx 和 .csv 格式</span>
                 </label>
             </div>
-            
+
             <div class="alert alert-info mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>

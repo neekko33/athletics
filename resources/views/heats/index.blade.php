@@ -16,7 +16,7 @@
     </div>
 
     <!-- 径赛分组 -->
-    <div class="card bg-base-100 shadow-xl mb-8">
+    <div class="card bg-base-100 shadow-sm mb-8">
         <div class="card-body">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="card-title text-2xl">径赛分组</h2>
@@ -64,11 +64,11 @@
                                                     {{ $heat->grade->name }} - 第 {{ $heat->heat_number }} 组
                                                 </h4>
                                                 <div class="space-x-2">
-                                                    <a href="{{ route('competitions.heats.show', [$competition, $heat]) }}" 
+                                                    <a href="{{ route('competitions.heats.show', [$competition, $heat]) }}"
                                                        class="btn btn-sm btn-ghost">查看详情</a>
-                                                    <a href="{{ route('competitions.heats.edit', [$competition, $heat]) }}" 
+                                                    <a href="{{ route('competitions.heats.edit', [$competition, $heat]) }}"
                                                        class="btn btn-sm btn-ghost">编辑</a>
-                                                    <form action="{{ route('competitions.heats.destroy', [$competition, $heat]) }}" 
+                                                    <form action="{{ route('competitions.heats.destroy', [$competition, $heat]) }}"
                                                           method="POST" class="inline"
                                                           onsubmit="return confirm('确定删除此分组吗？');">
                                                         @csrf
@@ -112,7 +112,7 @@
     </div>
 
     <!-- 田赛分组 -->
-    <div class="card bg-base-100 shadow-xl mb-8">
+    <div class="card bg-base-100 shadow-sm mb-8">
         <div class="card-body">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="card-title text-2xl">田赛分组</h2>
@@ -160,9 +160,9 @@
                                                     {{ $heat->grade->name }}（共 {{ $heat->lanes->count() }} 人）
                                                 </h4>
                                                 <div class="space-x-2">
-                                                    <a href="{{ route('competitions.heats.show', [$competition, $heat]) }}" 
+                                                    <a href="{{ route('competitions.heats.show', [$competition, $heat]) }}"
                                                        class="btn btn-sm btn-ghost">查看详情</a>
-                                                    <form action="{{ route('competitions.heats.destroy', [$competition, $heat]) }}" 
+                                                    <form action="{{ route('competitions.heats.destroy', [$competition, $heat]) }}"
                                                           method="POST" class="inline"
                                                           onsubmit="return confirm('确定删除此分组吗？');">
                                                         @csrf

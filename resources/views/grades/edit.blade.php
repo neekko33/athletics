@@ -6,20 +6,20 @@
 <div class="container mx-auto max-w-2xl">
     <h2 class="text-3xl font-bold mb-6">编辑年级</h2>
 
-    <div class="card bg-base-100 shadow-xl">
+    <div class="card bg-base-100 shadow-sm">
         <div class="card-body">
             <form action="{{ route('competitions.grades.update', [$competition, $grade]) }}" method="POST">
                 @csrf
                 @method('PUT')
-                
+
                 <div class="form-control w-full">
                     <label class="label">
                         <span class="label-text font-semibold">年级名称 *</span>
                     </label>
-                    <input type="text" 
-                           name="name" 
-                           value="{{ old('name', $grade->name) }}" 
-                           class="input input-bordered w-full @error('name') input-error @enderror" 
+                    <input type="text"
+                           name="name"
+                           value="{{ old('name', $grade->name) }}"
+                           class="input input-bordered w-full @error('name') input-error @enderror"
                            placeholder="例如：一年级、初一、高一"
                            required
                            autofocus>
@@ -36,7 +36,7 @@
                         <div class="stat-title">班级数</div>
                         <div class="stat-value text-primary text-2xl">{{ $grade->klasses->count() }}</div>
                     </div>
-                    
+
                     <div class="stat">
                         <div class="stat-title">运动员数</div>
                         <div class="stat-value text-secondary text-2xl">
@@ -69,7 +69,7 @@
                 <h3 class="card-title text-error">危险操作</h3>
                 <p>删除此年级将无法恢复。</p>
                 <div class="card-actions justify-end">
-                    <form action="{{ route('competitions.grades.destroy', [$competition, $grade]) }}" 
+                    <form action="{{ route('competitions.grades.destroy', [$competition, $grade]) }}"
                           method="POST"
                           onsubmit="return confirm('确定要删除该年级吗？此操作无法撤销！');">
                         @csrf

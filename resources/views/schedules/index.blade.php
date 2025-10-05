@@ -21,11 +21,6 @@
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-2xl font-bold">日程安排</h3>
                 <div class="flex space-x-2">
-                    @if ($schedules->count() > 0)
-                        <a href="#formatted-schedule" class="btn btn-outline">
-                            查看格式化日程
-                        </a>
-                    @endif
                     <a href="{{ route('competitions.schedules.bulk-new', $competition) }}" class="btn btn-secondary">
                         批量添加
                     </a>
@@ -147,49 +142,6 @@
                     </div>
                 </div>
             @endif
-
-            @if ($schedules->count() > 0)
-                <!-- 格式化日程 -->
-                <div id="formatted-schedule" class="mt-12 border-t pt-8">
-                    <h3 class="text-2xl font-bold mb-6">格式化日程（秩序册）</h3>
-
-                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                        <div class="mb-4 text-sm text-gray-600">
-                            提示：点击下方文本区域全选，然后复制到 Word 中进行编辑
-                        </div>
-                        <textarea readonly class="w-full p-4 font-mono text-sm border border-gray-300 rounded" rows="30"
-                            onclick="this.select()" style="resize: vertical;">{{ $formattedText }}</textarea>
-                        <div class="mt-4">
-                            <button onclick="copyToClipboard()" id="copy-btn" class="btn btn-primary btn-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                </svg>
-                                <span id="copy-text">复制到剪贴板</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                    function copyToClipboard() {
-                        const textarea = document.querySelector('#formatted-schedule textarea');
-                        textarea.select();
-                        document.execCommand('copy');
-
-                        const btn = event.target.closest('button');
-                        const originalText = btn.innerHTML;
-                        btn.innerHTML =
-                            '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg><span>已复制！</span>';
-
-                        setTimeout(() => {
-                            btn.innerHTML = originalText;
-                        }, 2000);
-                    }
-                </script>
-            @endif
-
             <!-- 底部导航 -->
             <div class="w-full flex justify-end mt-8">
                 <a href="{{ route('competitions.heats.index', $competition) }}" class="btn mr-2">
@@ -200,8 +152,5 @@
                 </a>
             </div>
         </div>
-    </div>
-    </div>
-    </div>
     </div>
 @endsection
