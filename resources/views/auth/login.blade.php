@@ -87,6 +87,11 @@
                             @enderror
                         </div>
 
+                        <div class="text-sm text-gray-400 mt-2">
+                            测试账号: test@example.com
+                            密码: password
+                        </div>
+
                         <!-- 记住我 -->
                         <div class="form-control mt-4">
                             <label class="label cursor-pointer justify-start">
