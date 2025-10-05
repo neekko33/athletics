@@ -52,29 +52,5 @@
             </form>
         </div>
     </div>
-
-    <!-- 快捷添加按钮 -->
-    <div class="mt-6">
-        <h3 class="text-lg font-semibold mb-3">快捷添加常用年级：</h3>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-            @foreach(['一年级', '二年级', '三年级', '四年级', '五年级', '六年级'] as $gradeName)
-                <form action="{{ route('competitions.grades.store', $competition) }}" method="POST" class="inline">
-                    @csrf
-                    <input type="hidden" name="name" value="{{ $gradeName }}">
-                    <button type="submit" class="btn btn-outline btn-sm w-full">{{ $gradeName }}</button>
-                </form>
-            @endforeach
-        </div>
-        <div class="divider">或</div>
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-            @foreach(['初一', '初二', '初三', '高一', '高二', '高三'] as $gradeName)
-                <form action="{{ route('competitions.grades.store', $competition) }}" method="POST" class="inline">
-                    @csrf
-                    <input type="hidden" name="name" value="{{ $gradeName }}">
-                    <button type="submit" class="btn btn-outline btn-sm w-full">{{ $gradeName }}</button>
-                </form>
-            @endforeach
-        </div>
-    </div>
 </div>
 @endsection

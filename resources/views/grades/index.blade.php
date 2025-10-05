@@ -6,7 +6,7 @@
 <div class="container mx-auto max-w-4xl">
     <!-- 步骤条 -->
     <div class="mb-6">
-        <ul class="steps steps-horizontal w-full">
+        <ul class="steps w-full">
             <li class="step step-primary">创建运动会</li>
             <li class="step step-primary">设置年级</li>
             <li class="step">登记运动员</li>

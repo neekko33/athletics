@@ -13,8 +13,8 @@
     </div>
 
     <!-- 统计数据卡片 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="stats shadow">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div class="stats shadow bg-white">
             <div class="stat">
                 <div class="stat-figure text-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <div class="stats shadow">
+        <div class="stats shadow bg-white">
             <div class="stat">
                 <div class="stat-figure text-secondary">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
@@ -38,7 +38,7 @@
             </div>
         </div>
 
-        <div class="stats shadow">
+        <div class="stats shadow bg-white">
             <div class="stat">
                 <div class="stat-figure text-accent">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <div class="stats shadow">
+        <div class="stats shadow bg-white">
             <div class="stat">
                 <div class="stat-figure text-success">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-8 h-8 stroke-current">
@@ -65,7 +65,7 @@
 
     <!-- 功能卡片 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title">年级班级管理</h3>
                 <p>管理参赛年级和班级信息</p>
@@ -75,7 +75,7 @@
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title">运动员管理</h3>
                 <p>添加、编辑运动员信息，Excel导入</p>
@@ -85,7 +85,7 @@
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title">赛事分组</h3>
                 <p>自动生成径赛、田赛分组</p>
@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title">日程安排</h3>
                 <p>设置比赛时间和场地</p>
@@ -105,7 +105,7 @@
             </div>
         </div>
 
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 shadow-sm">
             <div class="card-body">
                 <h3 class="card-title">基本信息</h3>
                 <div class="space-y-1 text-sm">
