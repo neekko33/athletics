@@ -77,7 +77,7 @@ class CompleteDataSeeder extends Seeder
         // 创建测试运动会
         echo "\n🏃 创建测试运动会数据...\n";
         $competition = Competition::create([
-            'name' => '2025年秋季运动会',
+            'name' => '测试运动会',
             'start_date' => '2025-10-15',
             'end_date' => '2025-10-16',
             'track_lanes' => 6,

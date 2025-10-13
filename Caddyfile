@@ -5,10 +5,10 @@
 
 # 你的域名或服务器 IP。如果你在本地测试，可以使用 localhost
 # 如果在云服务器上，应改为你的实际域名或 IP 地址，并考虑启用 HTTPS。
-:80 {
+neekko33.asia {
     root * public
 
-    # tls internal 
+    tls internal
     # FrankenPHP 会自动使用 Worker Mode 来处理 Laravel 应用
     php_server {
         # 如果你不确定，可以移除 try_files，让 Octane/Laravel 处理所有请求
@@ -16,7 +16,7 @@
     }
 
     try_files {path} {path}/ /index.php?{query}
-    
+
     # 启用压缩 (可选)
     encode zstd br gzip
 }
