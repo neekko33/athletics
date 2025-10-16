@@ -31,7 +31,7 @@ class CompetitionController extends Controller
             'track_lanes' => 'required|integer|min:1|max:10',
         ]);
 
-        $competition = Competition::create($validated);
+        $competition = Auth::user()->competitions()->create($validated);
 
         return redirect()->route('competitions.show', $competition)
             ->with('success', '运动会创建成功');

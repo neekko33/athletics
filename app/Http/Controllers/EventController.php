@@ -32,7 +32,7 @@ class EventController extends Controller
             'avg_time' => 'nullable|integer|min:1',
         ]);
 
-        Event::create($validated);
+        Auth::user()->events()->create($validated);
 
         return redirect()->route('events.index')
             ->with('success', '运动项目创建成功');
