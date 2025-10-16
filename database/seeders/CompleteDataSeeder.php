@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use App\Models\Athlete;
 use App\Models\Competition;
 use App\Models\Event;
@@ -12,6 +11,7 @@ use App\Models\Grade;
 use App\Models\Klass;
 use App\Models\CompetitionEvent;
 use App\Models\AthleteCompetitionEvent;
+use Illuminate\Support\Facades\Hash;
 
 class CompleteDataSeeder extends Seeder
 {
@@ -39,6 +39,22 @@ class CompleteDataSeeder extends Seeder
         Competition::truncate();
         Event::truncate();
         User::where('email', 'neekko33@gmail.com')->delete();
+
+        // 创建管理员
+        echo "\n🛠️ 创建管理员账号...\n";
+        $user = User::create([
+            'name' => '管理员',
+            'email' => env('ADMIN_EMAIL'),
+            'password' => Hash::make(env('ADMIN_PASSWORD'))
+        ]);
+
+        // 创建测试用户
+        echo "\n👤 创建测试用户...\n";
+        User::create([
+            'name' => '测试用户',
+            'email' => 'user@example.com',
+            'password' => Hash::make('password')
+        ]);
 
         echo "\n🌱 正在导入比赛项目数据...\n";
 
@@ -76,7 +92,7 @@ class CompleteDataSeeder extends Seeder
         echo "✅ " . Event::count() . " 个比赛项目已成功导入。\n";
         // 创建测试运动会
         echo "\n🏃 创建测试运动会数据...\n";
-        $competition = Competition::create([
+        $competition = $user->competitions()->create([
             'name' => '测试运动会',
             'start_date' => '2025-10-15',
             'end_date' => '2025-10-16',

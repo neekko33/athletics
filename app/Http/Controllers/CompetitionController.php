@@ -3,15 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Competition;
-use App\Models\Event;
 use App\Services\ScheduleBookService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CompetitionController extends Controller
 {
     public function index()
     {
-        $competitions = Competition::orderBy('start_date', 'desc')->get();
+        $competitions = Auth::user()->competitions()->orderBy('start_date', 'desc')->get();
         return view('competitions.index', compact('competitions'));
     }
 
@@ -109,7 +109,6 @@ class CompetitionController extends Controller
             return response()->download($filePath, $fileName, [
                 'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             ])->deleteFileAfterSend(true);
-
         } catch (\Exception $e) {
             return back()->with('error', '生成秩序册失败：' . $e->getMessage());
         }

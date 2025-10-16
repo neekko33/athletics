@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>登录 - 运动会管理系统</title>
+    <title>登录 - Athletes</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -21,7 +21,7 @@
                             d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                 </div>
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">运动会管理系统</h1>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Athletes</h1>
                 <p class="text-gray-600">请登录您的账号</p>
             </div>
 
@@ -84,6 +84,10 @@
                                 </label>
                             @enderror
                         </div>
+
+                        <div class="mt-4">
+                            <p class="text-gray-400">测试账号：user@example.com 测试密码：password</p>
+                        </div>
                         <!-- 记住我 -->
                         <div class="form-control mt-4">
                             <label class="label cursor-pointer justify-start">
@@ -119,7 +123,7 @@
                     </svg>
                     连接已加密，数据传输安全
                 </p>
-                <p> 蜀ICP备2025166165号-1</p>
+                <a href="https://beian.miit.gov.cn/" class="mt-3 inline-block hover:underline"> 蜀ICP备2025166165号-1</a>
             </div>
         </div>
     </div>
