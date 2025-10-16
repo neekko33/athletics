@@ -31,6 +31,8 @@ class CompleteDataSeeder extends Seeder
         echo "\n🧹 清理旧数据...\n";
 
         // 清理旧数据
+
+        User::truncate();
         AthleteCompetitionEvent::truncate();
         Athlete::truncate();
         Klass::truncate();
@@ -38,7 +40,6 @@ class CompleteDataSeeder extends Seeder
         CompetitionEvent::truncate();
         Competition::truncate();
         Event::truncate();
-        User::where('email', 'neekko33@gmail.com')->delete();
 
         // 创建管理员
         echo "\n🛠️ 创建管理员账号...\n";
@@ -85,8 +86,12 @@ class CompleteDataSeeder extends Seeder
         ];
 
         // 插入数据
-        foreach (array_merge($trackEvents, $fieldEvents) as $event) {
-            Event::create($event);
+
+        $users = User::all();
+        foreach ($users as $u) {
+            foreach (array_merge($trackEvents, $fieldEvents) as $event) {
+                $u->events()->create($event);
+            }
         }
 
         echo "✅ " . Event::count() . " 个比赛项目已成功导入。\n";

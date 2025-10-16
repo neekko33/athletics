@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
     public function index()
     {
-        $events = Event::orderBy('event_type')->orderBy('gender')->orderBy('name')->get();
+        $events = Auth::user()->events()->orderBy('event_type')->orderBy('gender')->orderBy('name')->get();
         $trackEvents = $events->where('event_type', 'track');
         $fieldEvents = $events->where('event_type', 'field');
-        
+
         return view('events.index', compact('trackEvents', 'fieldEvents'));
     }
 

@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Competition::class);
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(Event::class);
+    }
 }
