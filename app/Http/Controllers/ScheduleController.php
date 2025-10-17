@@ -10,7 +10,7 @@ use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
-use App\Helpers\ChineseHelper;
+use App\Models\Athlete;
 
 class ScheduleController extends Controller
 {
@@ -22,6 +22,9 @@ class ScheduleController extends Controller
                 'heat.grade',
                 'heat.lanes.laneAthletes.athlete.klass'
             ])
+            ->whereHas('heat.competitionEvent.event', function ($query) {
+                $query->where('event_type', '=', 'track');
+            })
             ->orderBy('scheduled_at')
             ->get();
 
@@ -32,7 +35,9 @@ class ScheduleController extends Controller
 
         // 获取未安排的heats
         $heatsWithoutSchedule = Heat::whereHas('competitionEvent', function ($q) use ($competition) {
-            $q->where('competition_id', $competition->id);
+            $q->where('competition_id', $competition->id)->whereHas('event', function ($query) {
+                $query->where('event_type', '=', 'track');
+            });
         })
             ->whereNotIn('heats.id', $competition->schedules()->pluck('heat_id'))
             ->with(['competitionEvent.event', 'grade', 'lanes'])
@@ -48,6 +53,47 @@ class ScheduleController extends Controller
         $formattedText = '';
 
         return view('schedules.index', compact('competition', 'schedules', 'schedulesByDate', 'heatsWithoutSchedule', 'grades', 'formattedText'));
+    }
+
+    public function indexField(Competition $competition)
+    {
+        $schedules = $competition->schedules()
+            ->with([
+                'heat.competitionEvent.event',
+                'heat.grade',
+                'heat.lanes.laneAthletes.athlete.klass'
+            ])
+            ->whereHas('heat.competitionEvent.event', function ($query) {
+                $query->where('event_type', '=', 'field');
+            })
+            ->orderBy('scheduled_at')
+            ->get();
+
+        // 按日期分组
+        $schedulesByDate = $schedules->groupBy(function ($schedule) {
+            return $schedule->scheduled_at->format('Y-m-d');
+        })->sortKeys();
+
+        // 获取未安排的heats
+        $heatsWithoutSchedule = Heat::whereHas('competitionEvent', function ($q) use ($competition) {
+            $q->where('competition_id', $competition->id)->whereHas('event', function ($query) {
+                $query->where('event_type', '=', 'field');
+            });
+        })
+            ->whereNotIn('heats.id', $competition->schedules()->pluck('heat_id'))
+            ->with(['competitionEvent.event', 'grade', 'lanes'])
+            ->get();
+
+        // 获取所有年级和班级数据（用于格式化日程）
+        $grades = $competition->grades()
+            ->with(['klasses.athletes'])
+            ->orderBy('order')
+            ->get();
+
+        // 生成格式化文本
+        $formattedText = '';
+
+        return view('schedules.index_field', compact('competition', 'schedules', 'schedulesByDate', 'heatsWithoutSchedule', 'grades', 'formattedText'));
     }
 
     public function create(Competition $competition, Request $request)
@@ -106,30 +152,33 @@ class ScheduleController extends Controller
             'venue' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
-
+        $eventType = $schedule->heat->competitionEvent->event->event_type;
         $schedule->update($validated);
 
         return redirect()
-            ->route('competitions.schedules.index', $competition)
+            ->route($eventType === 'field' ? 'competitions.schedules.index-field' : 'competitions.schedules.index', $competition)
             ->with('success', '日程更新成功');
     }
 
     public function destroy(Competition $competition, Schedule $schedule)
     {
+        $eventType = $schedule->heat->competitionEvent->event->event_type;
         $schedule->delete();
 
         return redirect()
-            ->route('competitions.schedules.index', $competition)
+            ->route($eventType === 'field' ? 'competitions.schedules.index-field' : 'competitions.schedules.index', $competition)
             ->with('success', '日程已删除');
     }
 
-    public function bulkNew(Competition $competition)
+    public function bulkNew(Request $request, Competition $competition)
     {
         // 获取所有未安排的heats
         $scheduledHeatIds = $competition->schedules()->pluck('heat_id')->toArray();
 
         $unscheduledHeats = Heat::whereHas('competitionEvent', function ($q) use ($competition) {
-            $q->where('competition_id', $competition->id);
+            $q->where('competition_id', $competition->id)->whereHas('event', function ($query) {
+                $query->where('event_type', '=', request()->get('type', 'track'));
+            });
         })
             ->when(!empty($scheduledHeatIds), function ($q) use ($scheduledHeatIds) {
                 $q->whereNotIn('heats.id', $scheduledHeatIds);
@@ -163,7 +212,17 @@ class ScheduleController extends Controller
             ]];
         });
 
-        return view('schedules.bulk_new', compact('competition', 'groupedHeats'));
+        // 获取最后一个已安排日程的结束时间
+        $date = $request->get('date', $competition->start_date->toDateString());
+        $lastSchedule = $competition->schedules()
+            ->whereHas('heat.competitionEvent.event', function ($query) {
+                $query->where('event_type', '=', request()->get('type', 'track'));
+            })
+            ->whereDate('scheduled_at', $date)
+            ->orderBy('end_at', 'desc')
+            ->first();
+
+        return view('schedules.bulk_new', compact('competition', 'groupedHeats', 'lastSchedule'));
     }
 
     public function bulkCreate(Competition $competition, Request $request)
@@ -178,6 +237,8 @@ class ScheduleController extends Controller
             'notes' => 'nullable|string',
             'avg_time' => 'required|integer|min:1',
         ]);
+
+        $eventType = Event::find($validated['event_id'])->event_type;
 
         // 强制转换avg_time为整数
         $avgTime = (int) $validated['avg_time'];
@@ -221,6 +282,35 @@ class ScheduleController extends Controller
         DB::beginTransaction();
         try {
             foreach ($heats as $heat) {
+                // 当添加日程时，检查同一时间段的另一种比赛中是否有重复的运动员
+                $otherEventType = $eventType === 'field' ? 'track' : 'field';
+                $conflictingSchedules = Schedule::whereHas('heat.competitionEvent.event', function ($q) use ($otherEventType) {
+                    $q->where('event_type', $otherEventType);
+                })
+                    ->where(function ($q) use ($currentTime, $avgTime) {
+                        $q->whereBetween('scheduled_at', [$currentTime, $currentTime->copy()->addMinutes($avgTime)])
+                            ->orWhereBetween('end_at', [$currentTime, $currentTime->copy()->addMinutes($avgTime)]);
+                    })
+                    ->get();
+
+                foreach ($conflictingSchedules as $schedule) {
+                    $trackAthleteIds = $schedule->heat->lanes->flatMap(function ($lane) {
+                        return $lane->laneAthletes->pluck('athlete_id');
+                    })->unique()->toArray();
+
+                    $fieldAthleteIds = $heat->lanes->flatMap(function ($lane) {
+                        return $lane->laneAthletes->pluck('athlete_id');
+                    })->unique()->toArray();
+
+                    if (count(array_intersect($trackAthleteIds, $fieldAthleteIds)) > 0) {
+                        $errorAthletes = Athlete::whereIn('id', array_intersect($trackAthleteIds, $fieldAthleteIds))->get();
+                        $errorNames = $errorAthletes->map(function ($athlete) {
+                            return $athlete->name . ' ';
+                        })->join(', ');
+
+                        throw new \Exception("时间冲突，运动员 {$errorNames} 在同一时间段内有多个项目安排");
+                    }
+                }
                 Schedule::create([
                     'heat_id' => $heat->id,
                     'scheduled_at' => $currentTime->copy(),
@@ -239,44 +329,15 @@ class ScheduleController extends Controller
             $event = Event::find($validated['event_id']);
 
             return redirect()
-                ->route('competitions.schedules.index', $competition)
+                ->route($eventType === 'field' ? 'competitions.schedules.index-field' : 'competitions.schedules.index', $competition)
                 ->with('success', "成功为 {$grade->name} {$event->name} ({$validated['gender']}) 添加了 {$createdCount} 个日程");
         } catch (\Exception $e) {
             DB::rollBack();
 
             return redirect()
                 ->back()
-                ->with('error', '批量添加失败，请检查时间冲突')
+                ->with('error', $e->getMessage() ?? '批量添加日程时出错')
                 ->withInput();
         }
-    }
-
-    public function print(Competition $competition)
-    {
-        $schedules = $competition->schedules()
-            ->with([
-                'heat.competitionEvent.event',
-                'heat.grade',
-                'heat.lanes.laneAthletes.athlete.klass'
-            ])
-            ->orderBy('scheduled_at')
-            ->get();
-
-        // 按日期分组
-        $schedulesByDate = $schedules->groupBy(function ($schedule) {
-            return $schedule->scheduled_at->format('Y-m-d');
-        })->sortKeys();
-
-        // 获取所有年级和班级数据
-        $grades = $competition->grades()
-            ->with(['klasses' => function ($q) {
-                $q->orderBy('name');
-            }, 'klasses.athletes' => function ($q) {
-                $q->orderBy('number');
-            }])
-            ->orderBy('order')
-            ->get();
-
-        return view('schedules.print', compact('competition', 'schedules', 'schedulesByDate', 'grades'));
     }
 }

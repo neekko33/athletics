@@ -239,11 +239,23 @@ class ScheduleBookService
 
                 foreach ($eventHeatsSorted as $heat) {
                     if ($eventType === 'track') {
+                        // 判断是否为中长跑项目，中长跑显示序号不显示道次
+                        $middleLongDistanceEvents = ['800米', '1500米', '1000米'];
                         $text .= "第" . ChineseHelper::numberToChinese($heat->heat_number) . "组\n";
-                        $text .= "道次";
+
+                        if (!in_array($event->name, $middleLongDistanceEvents)) {
+                            $text .= "道次";
+                        } else {
+                            $text .= "序号";
+                        }
+
                         foreach ($heat->lanes->sortBy('lane_number') as $lane) {
                             $laneNumbers = ['一', '二', '三', '四', '五', '六', '七', '八'];
-                            $text .= "\t" . $laneNumbers[$lane->lane_number - 1];
+                            if (!in_array($event->name, $middleLongDistanceEvents)) {
+                                $text .= "\t" . $laneNumbers[$lane->lane_number - 1];
+                            } else {
+                                $text .= "\t" . $lane->lane_number;
+                            }
                         }
                     } else {
                         $text .= "序号";

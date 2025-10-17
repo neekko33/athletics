@@ -36,7 +36,7 @@
                                 <span class="ml-auto text-sm font-normal text-gray-500 mr-4">
                                     共 {{ $daySchedules->count() }} 场比赛
                                 </span>
-                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{ $date }}&type=track"
+                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{ $date }}&type=field"
                                     class="btn btn-secondary">
                                     批量添加
                                 </a>
@@ -105,7 +105,7 @@
                 <div class="text-center py-12">
                     <p class="text-gray-500 text-lg mb-4">暂无日程安排</p>
                     <p class="text-gray-400 text-sm mb-6">请先生成径赛分组，然后为每个分组安排时间</p>
-                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=track" class="btn btn-secondary">
+                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=field" class="btn btn-secondary">
                         批量添加
                     </a>
                 </div>
@@ -135,7 +135,7 @@
             @endif
             <!-- 底部导航 -->
             <div class="w-full flex justify-end mt-8">
-                <a href="{{ route('competitions.heats.index', $competition) }}" class="btn mr-2">
+                <a href="{{ route('competitions.schedules.index', $competition) }}" class="btn mr-2">
                     上一步
                 </a>
                 <a href="{{ route('competitions.schedules.index-field', $competition) }}" class="btn btn-primary">

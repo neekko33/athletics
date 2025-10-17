@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         // Schedules
         Route::prefix('schedules')->name('schedules.')->group(function () {
             Route::get('/', [ScheduleController::class, 'index'])->name('index');
+            Route::get('/field', [ScheduleController::class, 'indexField'])->name('index-field');
             Route::get('/create', [ScheduleController::class, 'create'])->name('create');
             Route::post('/', [ScheduleController::class, 'store'])->name('store');
             Route::get('/{schedule}/edit', [ScheduleController::class, 'edit'])->name('edit');
@@ -62,7 +63,6 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{schedule}', [ScheduleController::class, 'destroy'])->name('destroy');
             Route::get('/bulk-new', [ScheduleController::class, 'bulkNew'])->name('bulk-new');
             Route::post('/bulk-create', [ScheduleController::class, 'bulkCreate'])->name('bulk-create');
-            Route::get('/print', [ScheduleController::class, 'print'])->name('print');
         });
     });
     // 结束认证保护的路由组
