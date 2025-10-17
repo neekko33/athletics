@@ -19,7 +19,7 @@
         <div class="bg-white p-6 rounded-md shadow-md">
             <!-- 顶部操作栏 -->
             <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-bold">日程安排</h3>
+                <h3 class="text-2xl font-bold">日程安排 - 径赛</h3>
             </div>
             @if ($schedules->count() > 0)
                 <!-- 日程列表 -->
