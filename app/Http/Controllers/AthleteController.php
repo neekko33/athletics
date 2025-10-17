@@ -17,14 +17,14 @@ class AthleteController extends Controller
     {
         $grades = $competition->grades()
             ->with([
-                'klasses' => function($query) {
-                    $query->with(['athletes' => function($q) {
+                'klasses' => function ($query) {
+                    $query->with(['athletes' => function ($q) {
                         $q->with('klass');
                     }]);
                 }
             ])
             ->get();
-        
+
         return view('athletes.index', compact('competition', 'grades'));
     }
 
@@ -33,7 +33,7 @@ class AthleteController extends Controller
         $gradeId = $request->query('grade_id');
         $grade = $competition->grades()->findOrFail($gradeId);
         $events = Event::all();
-        
+
         return view('athletes.create', compact('competition', 'grade', 'events'));
     }
 
@@ -53,18 +53,18 @@ class AthleteController extends Controller
 
             // 查找年级
             $grade = $competition->grades()->findOrFail($validated['grade_id']);
-            
+
             // 查找或创建班级
             $klassName = $validated['klass_name'];
             $order = 0;
-            
+
             // 尝试从班级名称提取数字作为order
             if (preg_match('/(\d+)/', $klassName, $matches)) {
                 $order = (int)$matches[1];
             } else {
                 $order = $grade->klasses()->max('order') + 1;
             }
-            
+
             $klass = $grade->klasses()->firstOrCreate(
                 ['name' => $klassName],
                 ['order' => $order]
@@ -83,7 +83,7 @@ class AthleteController extends Controller
                     $competitionEvent = $competition->competitionEvents()->firstOrCreate([
                         'event_id' => $eventId
                     ]);
-                    
+
                     // 创建运动员与比赛项目的关联
                     $athlete->athleteCompetitionEvents()->create([
                         'competition_event_id' => $competitionEvent->id
@@ -95,7 +95,6 @@ class AthleteController extends Controller
 
             return redirect()->route('competitions.athletes.index', $competition)
                 ->with('success', '运动员添加成功');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()
@@ -108,7 +107,7 @@ class AthleteController extends Controller
     {
         $grade = $athlete->klass->grade;
         $events = Event::all();
-        
+
         return view('athletes.edit', compact('competition', 'athlete', 'grade', 'events'));
     }
 
@@ -127,7 +126,7 @@ class AthleteController extends Controller
 
             $grade = $athlete->klass->grade;
             $klassName = $validated['klass_name'];
-            
+
             // 查找或创建班级
             $order = 0;
             if (preg_match('/(\d+)/', $klassName, $matches)) {
@@ -135,7 +134,7 @@ class AthleteController extends Controller
             } else {
                 $order = $grade->klasses()->max('order') + 1;
             }
-            
+
             $klass = $grade->klasses()->firstOrCreate(
                 ['name' => $klassName],
                 ['order' => $order]
@@ -151,14 +150,14 @@ class AthleteController extends Controller
             // 更新报名项目
             // 删除旧的关联
             $athlete->athleteCompetitionEvents()->delete();
-            
+
             // 创建新的关联
             if (!empty($validated['event_ids'])) {
                 foreach ($validated['event_ids'] as $eventId) {
                     $competitionEvent = $competition->competitionEvents()->firstOrCreate([
                         'event_id' => $eventId
                     ]);
-                    
+
                     $athlete->athleteCompetitionEvents()->create([
                         'competition_event_id' => $competitionEvent->id
                     ]);
@@ -169,7 +168,6 @@ class AthleteController extends Controller
 
             return redirect()->route('competitions.athletes.index', $competition)
                 ->with('success', '运动员信息更新成功');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return back()
@@ -186,25 +184,45 @@ class AthleteController extends Controller
             ->with('success', '运动员已删除');
     }
 
+    public function removeAll(Competition $competition)
+    {
+        // 删除该比赛下所有运动员及其关联数据
+        $grades = $competition->grades()->with('klasses.athletes')->get();
+
+        foreach ($grades as $grade) {
+            foreach ($grade->klasses as $klass) {
+                foreach ($klass->athletes as $athlete) {
+                    // 删除运动员的报名项目关联
+                    $athlete->athleteCompetitionEvents()->delete();
+                    // 删除运动员
+                    $athlete->delete();
+                }
+            }
+        }
+
+        return redirect()->route('competitions.athletes.index', $competition)
+            ->with('success', '已清空全部运动员');
+    }
+
     public function generateNumbers(Competition $competition)
     {
         // 按年级 -> 班级 -> 性别(男->女)排序，生成编号
         $athletes = $competition->grades()
-            ->with(['klasses' => function($query) {
+            ->with(['klasses' => function ($query) {
                 $query->with('athletes')->orderBy('order');
             }])
             ->orderBy('order')
             ->get()
-            ->flatMap(function($grade) {
-                return $grade->klasses->flatMap(function($klass) {
+            ->flatMap(function ($grade) {
+                return $grade->klasses->flatMap(function ($klass) {
                     // 先男生，后女生
-                    return $klass->athletes->sortBy(function($athlete) {
+                    return $klass->athletes->sortBy(function ($athlete) {
                         return $athlete->gender === '男' ? 0 : 1;
                     });
                 });
             });
 
-        $athletes->each(function($athlete, $index) {
+        $athletes->each(function ($athlete, $index) {
             $athlete->update(['number' => sprintf('%03d', $index + 1)]);
         });
 
@@ -220,7 +238,7 @@ class AthleteController extends Controller
         }
 
         $file = $request->file('file');
-        
+
         // 添加日志用于调试
         \Log::info('Starting import', [
             'competition_id' => $competition->id,
@@ -232,9 +250,9 @@ class AthleteController extends Controller
             $spreadsheet = IOFactory::load($file->getPathname());
             $worksheet = $spreadsheet->getActiveSheet();
             $highestRow = $worksheet->getHighestRow();
-            
+
             \Log::info('Excel loaded', ['highest_row' => $highestRow]);
-            
+
             $importedCount = 0;
             $errors = [];
 
@@ -245,6 +263,7 @@ class AthleteController extends Controller
                 $athleteName = trim($worksheet->getCell("C{$row}")->getValue() ?? '');
                 $gender = trim($worksheet->getCell("D{$row}")->getValue() ?? '');
                 $eventsStr = trim($worksheet->getCell("E{$row}")->getValue() ?? '');
+                $number = trim($worksheet->getCell("F{$row}")->getValue() ?? '');
 
                 // 跳过空行
                 if (empty($gradeName) && empty($athleteName)) {
@@ -265,7 +284,7 @@ class AthleteController extends Controller
                 } else {
                     $order = $grade->klasses()->max('order') + 1;
                 }
-                
+
                 $klass = $grade->klasses()->firstOrCreate(
                     ['name' => $klassName],
                     ['order' => $order]
@@ -275,6 +294,7 @@ class AthleteController extends Controller
                 $athlete = $klass->athletes()->create([
                     'name' => $athleteName,
                     'gender' => $gender,
+                    'number' => $number,
                 ]);
 
                 if ($athlete) {
@@ -288,11 +308,11 @@ class AthleteController extends Controller
                             $event = Event::where('name', $eventName)
                                 ->where('gender', $gender)
                                 ->first();
-                            
+
                             if ($event) {
                                 $competitionEvent = $competition->competitionEvents()
                                     ->firstOrCreate(['event_id' => $event->id]);
-                                
+
                                 $athlete->athleteCompetitionEvents()->create([
                                     'competition_event_id' => $competitionEvent->id
                                 ]);
@@ -312,22 +332,19 @@ class AthleteController extends Controller
 
             if (!empty($errors)) {
                 $errorMsg = "导入完成，成功 {$importedCount} 条，失败 " . count($errors) . " 条。";
-                if (count($errors) <= 10) {
-                    $errorMsg .= " 错误详情：" . implode('; ', $errors);
-                }
+                $errorMsg .= " 错误详情：" . implode('; ', $errors);
                 return redirect()->route('competitions.athletes.index', $competition)
                     ->with('warning', $errorMsg);
             }
 
             return redirect()->route('competitions.athletes.index', $competition)
                 ->with('success', "成功导入 {$importedCount} 名运动员");
-
         } catch (\Exception $e) {
             \Log::error('Import failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()->route('competitions.athletes.index', $competition)
                 ->with('error', '导入失败: ' . $e->getMessage());
         }
@@ -339,36 +356,36 @@ class AthleteController extends Controller
 
         // 创建CSV内容
         $csvData = [];
-        $csvData[] = ['年级', '班级', '姓名', '性别', '报名项目'];
-        $csvData[] = ['# 请删除此说明行', '填写示例如下', '↓↓↓', '', ''];
+        $csvData[] = ['年级', '班级', '姓名', '性别', '报名项目', '号码'];
+        $csvData[] = ['# 请删除此说明行', '填写示例如下', '↓↓↓', '', '', ''];
 
         // 添加示例数据
         if (!empty($grades)) {
             $firstGrade = $grades[0];
-            $csvData[] = [$firstGrade, '1班', '张三', '男', '100米,跳远'];
-            $csvData[] = [$firstGrade, '1班', '李四', '女', '100米,200米'];
-            $csvData[] = [$firstGrade, '2班', '王五', '男', '400米,跳高'];
+            $csvData[] = [$firstGrade, '1班', '张三', '男', '100米,跳远', '001'];
+            $csvData[] = [$firstGrade, '1班', '李四', '女', '100米,200米', '002'];
+            $csvData[] = [$firstGrade, '2班', '王五', '男', '400米,跳高', '003'];
 
             if (count($grades) > 1) {
                 $secondGrade = $grades[1];
-                $csvData[] = [$secondGrade, '1班', '赵六', '女', '200米'];
+                $csvData[] = [$secondGrade, '1班', '赵六', '女', '200米', '004'];
             }
         } else {
-            $csvData[] = ['一年级', '1班', '张三', '男', '100米,跳远'];
-            $csvData[] = ['一年级', '1班', '李四', '女', '100米,200米'];
-            $csvData[] = ['二年级', '2班', '王五', '男', '400米'];
+            $csvData[] = ['一年级', '1班', '张三', '男', '100米,跳远', '001'];
+            $csvData[] = ['一年级', '1班', '李四', '女', '100米,200米', '002'];
+            $csvData[] = ['二年级', '2班', '王五', '男', '400米', '003'];
         }
 
         // 生成CSV文件内容
         $output = fopen('php://temp', 'r+');
-        
+
         // 添加BOM以支持Excel正确识别UTF-8
         fputs($output, "\xEF\xBB\xBF");
-        
+
         foreach ($csvData as $row) {
             fputcsv($output, $row);
         }
-        
+
         rewind($output);
         $csvContent = stream_get_contents($output);
         fclose($output);

@@ -20,17 +20,17 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="card-title text-2xl">运动员列表</h2>
                 <div class="space-x-2">
-                    <form action="{{ route('competitions.athletes.generate-numbers', $competition) }}" method="POST" class="inline"
-                          onsubmit="return confirm('生成编号将按照年级→班级→性别顺序重新分配所有运动员编号，确定继续吗？');">
+                    <form action="{{ route('competitions.athletes.remove-all', $competition) }}" method="POST" class="inline"
+                          onsubmit="return confirm('确认要清空全部运动员吗?');">
                         @csrf
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-error">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
                             </svg>
-                            生成编号
+                            清空全部
                         </button>
                     </form>
-                    <button onclick="import_modal.showModal()" class="btn btn-secondary">
+                    <button onclick="import_modal.showModal()" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                         </svg>
