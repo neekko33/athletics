@@ -89,10 +89,10 @@ class HeatController extends Controller
                 }
 
                 // 检查是否是接力项目
-                $isRelay = str_contains($competitionEvent->event->name, '接力') || 
+                $isRelay = str_contains($competitionEvent->event->name, '接力') ||
                            str_contains($competitionEvent->event->name, '4×100') ||
                            str_contains($competitionEvent->event->name, '4×400') ||
-                           str_contains($competitionEvent->event->name, '4*100') ||
+                           str_contains($competitionEvent->event->name, '4*300') ||
                            str_contains($competitionEvent->event->name, '4*400');
 
                 // 检查是否是长距离项目
@@ -133,7 +133,7 @@ class HeatController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Generate heats failed', ['error' => $e->getMessage()]);
-            
+
             return redirect()->route('competitions.heats.index', $competition)
                 ->with('error', '生成分组失败: ' . $e->getMessage());
         }
@@ -142,7 +142,7 @@ class HeatController extends Controller
     private function generateRelayHeats($competitionEvent, $athletes, $maxLanes, &$warnings)
     {
         $generatedCount = 0;
-        
+
         // 按年级分组
         $athletesByGrade = $athletes->groupBy(function($athlete) {
             return $athlete->klass->grade_id;
@@ -150,7 +150,7 @@ class HeatController extends Controller
 
         foreach ($athletesByGrade as $gradeId => $gradeAthletes) {
             $grade = $gradeAthletes->first()->klass->grade;
-            
+
             // 按班级分组
             $athletesByKlass = $gradeAthletes->groupBy('klass_id');
 
@@ -179,7 +179,7 @@ class HeatController extends Controller
 
                 for ($i = 0; $i < $heatCount; $i++) {
                     $heatTeams = array_slice($validTeams, $i * $maxLanes, $maxLanes);
-                    
+
                     if (empty($heatTeams)) {
                         continue;
                     }
@@ -197,7 +197,7 @@ class HeatController extends Controller
 
                         // 随机选择4名运动员
                         $selectedAthletes = $team['athletes']->shuffle()->take(4);
-                        
+
                         foreach ($selectedAthletes as $position => $athlete) {
                             $lane->laneAthletes()->create([
                                 'athlete_id' => $athlete->id,
@@ -217,7 +217,7 @@ class HeatController extends Controller
     private function generateTrackHeats($competitionEvent, $athletes, $maxLanes)
     {
         $generatedCount = 0;
-        
+
         // 按年级分组
         $athletesByGrade = $athletes->groupBy(function($athlete) {
             return $athlete->klass->grade_id;
@@ -225,7 +225,7 @@ class HeatController extends Controller
 
         foreach ($athletesByGrade as $gradeId => $gradeAthletes) {
             $grade = $gradeAthletes->first()->klass->grade;
-            
+
             // 随机打乱年级内的运动员
             $shuffledAthletes = $gradeAthletes->shuffle()->values(); // 使用values()重置键
 
@@ -234,7 +234,7 @@ class HeatController extends Controller
 
             for ($i = 0; $i < $heatCount; $i++) {
                 $heatAthletes = $shuffledAthletes->slice($i * $maxLanes, $maxLanes)->values(); // 重置键
-                
+
                 if ($heatAthletes->isEmpty()) {
                     continue;
                 }
@@ -250,7 +250,7 @@ class HeatController extends Controller
                     $lane = $heat->lanes()->create([
                         'lane_number' => $index + 1
                     ]);
-                    
+
                     $lane->laneAthletes()->create([
                         'athlete_id' => $athlete->id
                     ]);
@@ -266,7 +266,7 @@ class HeatController extends Controller
     private function generateLongDistanceHeats($competitionEvent, $athletes)
     {
         $generatedCount = 0;
-        
+
         // 按年级分组（类似田赛）
         $athletesByGrade = $athletes->groupBy(function($athlete) {
             return $athlete->klass->grade_id;
@@ -274,7 +274,7 @@ class HeatController extends Controller
 
         foreach ($athletesByGrade as $gradeId => $gradeAthletes) {
             $grade = $gradeAthletes->first()->klass->grade;
-            
+
             // 随机打乱年级内的运动员顺序
             $shuffledAthletes = $gradeAthletes->shuffle()->values(); // 使用values()重置键
 
@@ -291,7 +291,7 @@ class HeatController extends Controller
                     'lane_number' => $index + 1,
                     'position' => $index + 1
                 ]);
-                
+
                 $lane->laneAthletes()->create([
                     'athlete_id' => $athlete->id
                 ]);
@@ -338,7 +338,7 @@ class HeatController extends Controller
 
                 foreach ($athletesByGrade as $gradeId => $gradeAthletes) {
                     $grade = $gradeAthletes->first()->klass->grade;
-                    
+
                     // 随机打乱年级内的运动员顺序
                     $shuffledAthletes = $gradeAthletes->shuffle()->values(); // 使用values()重置键
 
@@ -355,7 +355,7 @@ class HeatController extends Controller
                             'lane_number' => $index + 1,
                             'position' => $index + 1  // position表示试跳/试投顺序
                         ]);
-                        
+
                         $lane->laneAthletes()->create([
                             'athlete_id' => $athlete->id
                         ]);
@@ -373,7 +373,7 @@ class HeatController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Generate field heats failed', ['error' => $e->getMessage()]);
-            
+
             return redirect()->route('competitions.heats.index', $competition)
                 ->with('error', '生成田赛分组失败: ' . $e->getMessage());
         }
@@ -476,7 +476,7 @@ class HeatController extends Controller
 
         $athlete = Athlete::findOrFail($validated['athlete_id']);
         $competitionEvent = $heat->competitionEvent;
-        
+
         $isRelay = str_contains($competitionEvent->event->name, '接力');
 
         // 检查年级是否匹配
@@ -522,7 +522,7 @@ class HeatController extends Controller
 
             DB::commit();
 
-            $message = $isRelay 
+            $message = $isRelay
                 ? "运动员已添加到第 {$validated['lane_number']} 赛道第 {$validated['relay_position']} 棒"
                 : "运动员已添加到第 {$validated['lane_number']} 赛道";
 

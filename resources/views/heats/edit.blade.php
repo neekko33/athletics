@@ -19,7 +19,7 @@
     </div>
 
     @php
-        $isRelay = str_contains($competitionEvent->event->name, '接力') || str_contains($competitionEvent->event->name, '4*100');
+        $isRelay = str_contains($competitionEvent->event->name, '接力') || str_contains($competitionEvent->event->name, '4*300');
         $isFieldEvent = $competitionEvent->event->event_type === 'field';
     @endphp
 

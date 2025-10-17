@@ -38,6 +38,6 @@ class Event extends Model
 
     public function isRelay(): bool
     {
-        return str_contains($this->name, '接力') || str_contains($this->name, '4*100');
+        return str_contains($this->name, '接力') || str_contains($this->name, '4*300');
     }
 }
