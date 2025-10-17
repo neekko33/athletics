@@ -16,15 +16,15 @@ class HeatController extends Controller
     {
         // 获取径赛项目及其分组
         $trackEvents = $competition->competitionEvents()
-            ->whereHas('event', function($query) {
+            ->whereHas('event', function ($query) {
                 $query->where('event_type', 'track');
             })
             ->with([
                 'event',
-                'heats' => function($query) {
+                'heats' => function ($query) {
                     $query->with([
                         'grade',
-                        'lanes' => function($q) {
+                        'lanes' => function ($q) {
                             $q->with(['laneAthletes.athlete.klass'])->orderBy('lane_number');
                         }
                     ])->orderBy('heat_number');
@@ -35,15 +35,15 @@ class HeatController extends Controller
 
         // 获取田赛项目及其分组
         $fieldEvents = $competition->competitionEvents()
-            ->whereHas('event', function($query) {
+            ->whereHas('event', function ($query) {
                 $query->where('event_type', 'field');
             })
             ->with([
                 'event',
-                'heats' => function($query) {
+                'heats' => function ($query) {
                     $query->with([
                         'grade',
-                        'lanes' => function($q) {
+                        'lanes' => function ($q) {
                             $q->with(['laneAthletes.athlete.klass'])->orderBy('lane_number');
                         }
                     ]);
@@ -59,7 +59,7 @@ class HeatController extends Controller
     {
         // 为所有径赛项目生成分组
         $trackEvents = $competition->competitionEvents()
-            ->whereHas('event', function($query) {
+            ->whereHas('event', function ($query) {
                 $query->where('event_type', 'track');
             })
             ->with([
@@ -90,10 +90,10 @@ class HeatController extends Controller
 
                 // 检查是否是接力项目
                 $isRelay = str_contains($competitionEvent->event->name, '接力') ||
-                           str_contains($competitionEvent->event->name, '4×100') ||
-                           str_contains($competitionEvent->event->name, '4×400') ||
-                           str_contains($competitionEvent->event->name, '4*300') ||
-                           str_contains($competitionEvent->event->name, '4*400');
+                    str_contains($competitionEvent->event->name, '4×100') ||
+                    str_contains($competitionEvent->event->name, '4×400') ||
+                    str_contains($competitionEvent->event->name, '4*300') ||
+                    str_contains($competitionEvent->event->name, '4*400');
 
                 // 检查是否是长距离项目
                 $isLongDistance = in_array($competitionEvent->event->name, $longDistanceEvents);
@@ -129,7 +129,6 @@ class HeatController extends Controller
                 return redirect()->route('competitions.heats.index', $competition)
                     ->with('warning', '未能生成任何分组。' . implode('; ', $errors));
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Generate heats failed', ['error' => $e->getMessage()]);
@@ -144,7 +143,7 @@ class HeatController extends Controller
         $generatedCount = 0;
 
         // 按年级分组
-        $athletesByGrade = $athletes->groupBy(function($athlete) {
+        $athletesByGrade = $athletes->groupBy(function ($athlete) {
             return $athlete->klass->grade_id;
         });
 
@@ -177,8 +176,15 @@ class HeatController extends Controller
             if (!empty($validTeams)) {
                 $heatCount = ceil(count($validTeams) / $maxLanes);
 
+                // 计算分组总数与赛道数，当超过赛道数时，平均分配
+                if ($heatCount > 1) {
+                    $currentMaxLanes = ceil(count($validTeams) / $heatCount);
+                } else {
+                    $currentMaxLanes = $maxLanes;
+                }
+
                 for ($i = 0; $i < $heatCount; $i++) {
-                    $heatTeams = array_slice($validTeams, $i * $maxLanes, $maxLanes);
+                    $heatTeams = array_slice($validTeams, $i * $currentMaxLanes, $currentMaxLanes);
 
                     if (empty($heatTeams)) {
                         continue;
@@ -214,12 +220,33 @@ class HeatController extends Controller
         return $generatedCount;
     }
 
+    private function shuffleAthletes($athletes)
+    {
+        $firstShuffle = $athletes->shuffle()->values(); // 使用values()重置键
+        foreach ($firstShuffle as $index => $athlete) {
+            // 判断每个运动员是否与前一个运动员同班级，如果相同班级则查找一个不同班级的运动员交换位置
+            if ($index > 0 && $athlete->klass_id === $firstShuffle[$index - 1]->klass_id) {
+                // 查找一个不同班级的运动员
+                for ($j = $index + 1; $j < $firstShuffle->count(); $j++) {
+                    if ($firstShuffle[$j]->klass_id !== $athlete->klass_id) {
+                        // 交换位置
+                        $temp = $firstShuffle[$index];
+                        $firstShuffle[$index] = $firstShuffle[$j];
+                        $firstShuffle[$j] = $temp;
+                        break;
+                    }
+                }
+            }
+        }
+        return $firstShuffle;
+    }
+
     private function generateTrackHeats($competitionEvent, $athletes, $maxLanes)
     {
         $generatedCount = 0;
 
         // 按年级分组
-        $athletesByGrade = $athletes->groupBy(function($athlete) {
+        $athletesByGrade = $athletes->groupBy(function ($athlete) {
             return $athlete->klass->grade_id;
         });
 
@@ -227,13 +254,20 @@ class HeatController extends Controller
             $grade = $gradeAthletes->first()->klass->grade;
 
             // 随机打乱年级内的运动员
-            $shuffledAthletes = $gradeAthletes->shuffle()->values(); // 使用values()重置键
+            $shuffledAthletes = $this->shuffleAthletes($gradeAthletes);
 
             // 计算需要多少个分组
             $heatCount = ceil($shuffledAthletes->count() / $maxLanes);
 
+            // 计算分组总数与赛道数，当超过赛道数时，平均分配
+            if ($heatCount > 1) {
+                $currentMaxLanes = ceil($shuffledAthletes->count() / $heatCount);
+            } else {
+                $currentMaxLanes = $maxLanes;
+            }
+
             for ($i = 0; $i < $heatCount; $i++) {
-                $heatAthletes = $shuffledAthletes->slice($i * $maxLanes, $maxLanes)->values(); // 重置键
+                $heatAthletes = $shuffledAthletes->slice($i * $currentMaxLanes, $currentMaxLanes)->values(); // 重置键
 
                 if ($heatAthletes->isEmpty()) {
                     continue;
@@ -268,7 +302,7 @@ class HeatController extends Controller
         $generatedCount = 0;
 
         // 按年级分组（类似田赛）
-        $athletesByGrade = $athletes->groupBy(function($athlete) {
+        $athletesByGrade = $athletes->groupBy(function ($athlete) {
             return $athlete->klass->grade_id;
         });
 
@@ -276,7 +310,7 @@ class HeatController extends Controller
             $grade = $gradeAthletes->first()->klass->grade;
 
             // 随机打乱年级内的运动员顺序
-            $shuffledAthletes = $gradeAthletes->shuffle()->values(); // 使用values()重置键
+            $shuffledAthletes = $this->shuffleAthletes($gradeAthletes);
 
             // 为该年级创建一个分组
             $heat = $competitionEvent->heats()->create([
@@ -307,7 +341,7 @@ class HeatController extends Controller
     {
         // 为所有田赛项目生成分组
         $fieldEvents = $competition->competitionEvents()
-            ->whereHas('event', function($query) {
+            ->whereHas('event', function ($query) {
                 $query->where('event_type', 'field');
             })
             ->with([
@@ -332,7 +366,7 @@ class HeatController extends Controller
                 }
 
                 // 田赛项目：按年级分组，不限人数
-                $athletesByGrade = $athletes->groupBy(function($athlete) {
+                $athletesByGrade = $athletes->groupBy(function ($athlete) {
                     return $athlete->klass->grade_id;
                 });
 
@@ -369,7 +403,6 @@ class HeatController extends Controller
 
             return redirect()->route('competitions.heats.index', $competition)
                 ->with('success', "成功生成 {$generatedCount} 个田赛分组");
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Generate field heats failed', ['error' => $e->getMessage()]);
@@ -384,7 +417,7 @@ class HeatController extends Controller
         $heat->load([
             'grade',
             'competitionEvent.event',
-            'lanes' => function($query) {
+            'lanes' => function ($query) {
                 $query->with(['laneAthletes.athlete.klass.grade'])->orderBy('lane_number');
             }
         ]);
@@ -405,26 +438,26 @@ class HeatController extends Controller
         $competitionEvent = $heat->competitionEvent;
 
         // 获取同项目、同年级的其他分组中的运动员
-        $availableAthletes = Athlete::whereHas('laneAthletes.lane.heat', function($query) use ($competitionEvent, $heat) {
-                $query->where('competition_event_id', $competitionEvent->id)
-                      ->where('grade_id', $heat->grade_id)
-                      ->where('id', '!=', $heat->id);
-            })
+        $availableAthletes = Athlete::whereHas('laneAthletes.lane.heat', function ($query) use ($competitionEvent, $heat) {
+            $query->where('competition_event_id', $competitionEvent->id)
+                ->where('grade_id', $heat->grade_id)
+                ->where('id', '!=', $heat->id);
+        })
             ->with('klass.grade')
             ->get();
 
         // 获取已报名但未分组的运动员（同年级）
         $registeredAthleteIds = $competitionEvent->athleteCompetitionEvents()
-            ->whereHas('athlete.klass', function($query) use ($heat) {
+            ->whereHas('athlete.klass', function ($query) use ($heat) {
                 $query->where('grade_id', $heat->grade_id);
             })
             ->pluck('athlete_id')
             ->toArray();
 
-        $groupedAthleteIds = Athlete::whereHas('laneAthletes.lane.heat', function($query) use ($competitionEvent, $heat) {
-                $query->where('competition_event_id', $competitionEvent->id)
-                      ->where('grade_id', $heat->grade_id);
-            })
+        $groupedAthleteIds = Athlete::whereHas('laneAthletes.lane.heat', function ($query) use ($competitionEvent, $heat) {
+            $query->where('competition_event_id', $competitionEvent->id)
+                ->where('grade_id', $heat->grade_id);
+        })
             ->pluck('id')
             ->toArray();
 
@@ -486,7 +519,7 @@ class HeatController extends Controller
         }
 
         // 检查该运动员是否已经在当前分组中
-        $existsInHeat = $heat->lanes()->whereHas('laneAthletes', function($query) use ($athlete) {
+        $existsInHeat = $heat->lanes()->whereHas('laneAthletes', function ($query) use ($athlete) {
             $query->where('athlete_id', $athlete->id);
         })->exists();
 
@@ -504,9 +537,9 @@ class HeatController extends Controller
         DB::beginTransaction();
         try {
             // 从原分组中移除该运动员
-            LaneAthlete::whereHas('lane.heat', function($query) use ($competitionEvent) {
-                    $query->where('competition_event_id', $competitionEvent->id);
-                })
+            LaneAthlete::whereHas('lane.heat', function ($query) use ($competitionEvent) {
+                $query->where('competition_event_id', $competitionEvent->id);
+            })
                 ->where('athlete_id', $athlete->id)
                 ->delete();
 
@@ -528,7 +561,6 @@ class HeatController extends Controller
 
             return redirect()->route('competitions.heats.edit', [$competition, $heat])
                 ->with('success', $message);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('competitions.heats.edit', [$competition, $heat])
@@ -542,9 +574,9 @@ class HeatController extends Controller
             'athlete_id' => 'required|exists:athletes,id'
         ]);
 
-        $laneAthlete = LaneAthlete::whereHas('lane', function($query) use ($heat) {
-                $query->where('heat_id', $heat->id);
-            })
+        $laneAthlete = LaneAthlete::whereHas('lane', function ($query) use ($heat) {
+            $query->where('heat_id', $heat->id);
+        })
             ->where('athlete_id', $validated['athlete_id'])
             ->first();
 
@@ -567,7 +599,6 @@ class HeatController extends Controller
 
             return redirect()->route('competitions.heats.edit', [$competition, $heat])
                 ->with('success', '运动员已从分组中移除');
-
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('competitions.heats.edit', [$competition, $heat])
