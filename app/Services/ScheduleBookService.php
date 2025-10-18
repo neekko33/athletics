@@ -179,6 +179,7 @@ class ScheduleBookService
     private function generateHeatGroups(Competition $competition): string
     {
         $middleLongDistanceEvents = ['800米', '1500米', '1000米'];
+        $multipleLapEvents = ['4*100米接力', '4*300米接力', '4*100米', '4*300米'];
 
         $schedules = $competition->schedules()
             ->with([
@@ -235,7 +236,12 @@ class ScheduleBookService
                 $totalGroups = $eventHeatsSorted->count();
                 $takeCount = ceil($totalParticipants * 0.6);
 
-                $text .= ($startIndex++) . "、{$event->name}预决赛，{$totalParticipants}人" . ($eventType === 'track' ? ($totalGroups . '组') : '') . "，取{$takeCount}名\n";
+                if (in_array($event->name, $multipleLapEvents)) {
+                    $takeCount = 4;
+                    $text .= ($startIndex++) . "、{$event->name}预决赛，{$totalParticipants}队" . ($eventType === 'track' ? ($totalGroups . '组') : '') . "，取{$takeCount}名\n";
+                } else {
+                    $text .= ($startIndex++) . "、{$event->name}预决赛，{$totalParticipants}人" . ($eventType === 'track' ? ($totalGroups . '组') : '') . "，取{$takeCount}名\n";
+                }
 
                 foreach ($eventHeatsSorted as $heat) {
                     // 非长跑的径赛项目，需要显示道次
@@ -255,30 +261,32 @@ class ScheduleBookService
 
                         $text .= "\n";
 
-                        // 姓名行
-                        $text .= "姓名    ";
-                        foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
-                            $laneAthlete = $lane->laneAthletes->first();
-                            $athlete = $laneAthlete ? $laneAthlete->athlete : null;
-                            $index > 0 && $text .= "   ";
-                            $name = $athlete ? $athlete->name : '';
-                            $formattedName = mb_strlen($name, 'UTF-8') === 2
-                                ? implode('　', preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY))
-                                : $name;
-                            $text .= ($athlete ? $formattedName : '');
-                        }
-                        $text .= "\n";
+                        // 接力比赛只需要显示班级
+                        if (!in_array($event->name, $multipleLapEvents)) {
+                            // 姓名行
+                            $text .= "姓名    ";
+                            foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
+                                $laneAthlete = $lane->laneAthletes->first();
+                                $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                                $index > 0 && $text .= "   ";
+                                $name = $athlete ? $athlete->name : '';
+                                $formattedName = mb_strlen($name, 'UTF-8') === 2
+                                    ? implode('　', preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY))
+                                    : $name;
+                                $text .= ($athlete ? $formattedName : '');
+                            }
+                            $text .= "\n";
 
-                        // 号码行
-                        $text .= "号码      ";
-                        foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
-                            $laneAthlete = $lane->laneAthletes->first();
-                            $athlete = $laneAthlete ? $laneAthlete->athlete : null;
-                            $index > 0 && $text .= "      ";
-                            $text .= ($athlete ? $athlete->number : '');
+                            // 号码行
+                            $text .= "号码      ";
+                            foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
+                                $laneAthlete = $lane->laneAthletes->first();
+                                $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                                $index > 0 && $text .= "      ";
+                                $text .= ($athlete ? $athlete->number : '');
+                            }
+                            $text .= "\n";
                         }
-                        $text .= "\n";
-
                         // 班级行
                         $text .= "班级     ";
                         foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
