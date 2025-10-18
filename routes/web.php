@@ -60,7 +60,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/', [ScheduleController::class, 'store'])->name('store');
             Route::get('/{schedule}/edit', [ScheduleController::class, 'edit'])->name('edit');
             Route::put('/{schedule}', [ScheduleController::class, 'update'])->name('update');
-            Route::delete('/{schedule}', [ScheduleController::class, 'destroy'])->name('destroy');
+            Route::delete('/destroy', [ScheduleController::class, 'destroy'])->name('destroy');
+            Route::delete('/destroy-all', [ScheduleController::class, 'destroyAll'])->name('destroy-all');
             Route::get('/bulk-new', [ScheduleController::class, 'bulkNew'])->name('bulk-new');
             Route::post('/bulk-create', [ScheduleController::class, 'bulkCreate'])->name('bulk-create');
         });

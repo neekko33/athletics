@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '批量添加日程')
+@section('title', '添加日程')
 
 @section('content')
     <div class="container mx-auto max-w-2xl">
@@ -17,7 +17,7 @@
         </div>
 
         <div class="bg-white p-6 rounded-md shadow-md">
-            <h1 class="font-bold text-2xl mb-6">批量添加日程</h1>
+            <h1 class="font-bold text-2xl mb-6">添加日程 - {{ request('type') == 'track' ? '径赛' : '田赛' }}</h1>
 
             @if (session('error'))
                 <div class="alert alert-error mb-4">
@@ -56,42 +56,16 @@
                                     $heats = $item['heats'];
                                 @endphp
                                 <option
-                                    value="{{ $data['grade_id'] }}|{{ $data['event_id'] }}|{{ $data['gender'] }}|{{ $data['avg_time'] }}"
+                                    value="{{ $data['event_id'] }}|{{ $data['gender'] }}|{{ $data['avg_time'] }}"
                                     data-heats-count="{{ $heats->count() }}" data-avg-time="{{ $data['avg_time'] }}">
-                                    {{ $data['grade_name'] }} - {{ $data['event_name'] }} ({{ $data['gender'] }}) -
+                                    {{ $data['event_name'] }} ({{ $data['gender'] }}) -
                                     {{ $heats->count() }} 个分组
                                 </option>
                             @endforeach
                         </select>
-                        <input type="hidden" name="grade_id" id="grade_id">
                         <input type="hidden" name="event_id" id="event_id">
                         <input type="hidden" name="gender" id="gender">
                         <input type="hidden" name="avg_time" id="avg_time">
-                    </div>
-
-                    <!-- 将要安排的分组预览 -->
-                    <div id="heats-preview" class="my-5 hidden">
-                        <label class="label">
-                            <span class="label-text">将要安排的分组</span>
-                        </label>
-                        <div class="bg-base-200 p-3 rounded-lg max-h-48 overflow-y-auto mt-2">
-                            @foreach ($groupedHeats as $key => $item)
-                                @php
-                                    $data = $item['data'];
-                                    $heats = $item['heats'];
-                                    $groupId = "{$data['grade_id']}_{$data['event_id']}_{$data['gender']}";
-                                @endphp
-                                <div class="heats-list hidden" data-group-id="{{ $groupId }}">
-                                    <div class="flex flex-wrap gap-2">
-                                        @foreach ($heats as $heat)
-                                            <span class="badge badge-outline badge-sm">
-                                                第{{ $heat->heat_number }}组
-                                            </span>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
                     </div>
 
                     <!-- 开始日期 -->
@@ -130,7 +104,7 @@
                     </div>
 
                     <!-- 场地 -->
-                    <div class="my-5">
+                    <div class="my-5" style="display: none;">
                         <label for="venue" class="label">
                             <span class="label-text">场地</span>
                         </label>
@@ -166,7 +140,6 @@
                         const timePreview = document.getElementById('time-preview');
                         const dateInput = document.getElementById('start_date');
                         const timeInput = document.getElementById('start_time');
-                        const gradeIdInput = document.getElementById('grade_id');
                         const eventIdInput = document.getElementById('event_id');
                         const genderInput = document.getElementById('gender');
                         const avgTimeInput = document.getElementById('avg_time');
@@ -183,40 +156,25 @@
                             const selectedOption = groupSelect.options[groupSelect.selectedIndex];
 
                             if (selectedOption.value) {
-                                // 解析选中的值: grade_id|event_id|gender|avg_time
-                                const [gradeId, eventId, gender, avgTime] = selectedOption.value.split('|');
+                                const [eventId, gender, avgTime] = selectedOption.value.split('|');
                                 const heatsCount = parseInt(selectedOption.dataset.heatsCount);
 
                                 // 设置隐藏字段
-                                gradeIdInput.value = gradeId;
                                 eventIdInput.value = eventId;
                                 genderInput.value = gender;
                                 avgTimeInput.value = avgTime;
 
                                 console.log('Hidden fields set:', {
-                                    grade_id: gradeIdInput.value,
                                     event_id: eventIdInput.value,
                                     gender: genderInput.value,
                                     avg_time: avgTimeInput.value
                                 });
-
-                                // 显示分组列表
-                                heatsPreview.classList.remove('hidden');
-                                document.querySelectorAll('.heats-list').forEach(list => {
-                                    list.classList.add('hidden');
-                                });
-                                const groupId = `${gradeId}_${eventId}_${gender}`;
-                                const targetList = document.querySelector(`[data-group-id="${groupId}"]`);
-                                if (targetList) {
-                                    targetList.classList.remove('hidden');
-                                }
 
                                 // 更新时间预览
                                 updateTimePreview(heatsCount, parseInt(avgTime));
                             } else {
                                 heatsPreview.classList.add('hidden');
                                 timePreview.classList.add('hidden');
-                                gradeIdInput.value = '';
                                 eventIdInput.value = '';
                                 genderInput.value = '';
                                 avgTimeInput.value = '';
@@ -249,13 +207,12 @@
 
                         // 表单提交前验证
                         form.addEventListener('submit', function(e) {
-                            if (!gradeIdInput.value || !eventIdInput.value || !genderInput.value || !avgTimeInput.value) {
+                            if (!eventIdInput.value || !genderInput.value || !avgTimeInput.value) {
                                 e.preventDefault();
                                 alert('请先选择比赛分组');
                                 return false;
                             }
                             console.log('Form submitting with:', {
-                                grade_id: gradeIdInput.value,
                                 event_id: eventIdInput.value,
                                 gender: genderInput.value,
                                 avg_time: avgTimeInput.value

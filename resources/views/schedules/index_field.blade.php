@@ -36,9 +36,19 @@
                                 <span class="ml-auto text-sm font-normal text-gray-500 mr-4">
                                     共 {{ $daySchedules->count() }} 场比赛
                                 </span>
+                                <form action="{{ route('competitions.schedules.destroy-all', [$competition]) }}"
+                                    method="POST" onsubmit="return confirm('确定删除当天所有日程吗？')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <input type="hidden" name="date" value="{{ $date }}" />
+                                    <input type="hidden" name="event_type" value="field" />
+                                    <button type="submit" class="btn btn-error btn-dash mr-4">
+                                        清空当天日程
+                                    </button>
+                                </form>
                                 <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{ $date }}&type=field"
                                     class="btn btn-secondary">
-                                    批量添加
+                                    添加比赛
                                 </a>
                             </h4>
                             <table class="table w-full">
@@ -46,48 +56,45 @@
                                     <tr>
                                         <th>时间</th>
                                         <th>比赛项目</th>
-                                        <th>组次</th>
-                                        <th>场地</th>
-                                        <th>备注</th>
+                                        <th>性别</th>
+                                        <th>分组数量</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach ($daySchedules as $schedule)
+                                    @foreach ($daySchedules as $eventName => $schedule)
                                         <tr class="hover">
                                             <td class="whitespace-nowrap">
                                                 <div class="flex gap-1">
-                                                    <div class="font-medium">{{ $schedule->scheduled_at->format('H:i') }}
+                                                    <div class="font-medium">{{ $schedule['scheduled_at']->format('H:i') }}
                                                     </div>
-                                                    @if ($schedule->end_at)
+                                                    @if ($schedule['end_at'])
                                                         <div class="text-sm text-gray-500">
-                                                            ~ {{ $schedule->end_at->format('H:i') }}
+                                                            ~ {{ $schedule['end_at']->format('H:i') }}
                                                         </div>
                                                     @endif
                                                 </div>
                                             </td>
                                             <td>
-                                                <div>
-                                                    <p class="font-medium">
-                                                        {{ $schedule->heat->competitionEvent->event->gender }}子
-                                                        {{ $schedule->heat->competitionEvent->event->name }}</p>
-                                                </div>
+                                                <div class="font-medium">{{ $schedule['event']->name }}</div>
                                             </td>
-                                            <td>{{ $schedule->heat->grade->name }} 第 {{ $schedule->heat->heat_number }} 组
+                                            <td>
+                                                <div class="font-medium">{{ $schedule['event']->gender }}</div>
                                             </td>
-                                            <td>{{ $schedule->venue ?: '-' }}</td>
-                                            <td class="max-w-xs truncate">{{ $schedule->notes ?: '-' }}</td>
+                                            <td>
+                                                <div class="font-medium">{{ $schedule['schedules']->count() }}</div>
+                                            </td>
                                             <td>
                                                 <div class="flex space-x-2">
-                                                    {{-- <a href="{{ route('competitions.schedules.edit', [$competition, $schedule]) }}"
-                                                        class="btn btn-sm">
-                                                        编辑
-                                                    </a> --}}
                                                     <form
-                                                        action="{{ route('competitions.schedules.destroy', [$competition, $schedule]) }}"
+                                                        action="{{ route('competitions.schedules.destroy', [$competition]) }}"
                                                         method="POST" onsubmit="return confirm('确定删除此日程吗？')">
                                                         @csrf
                                                         @method('DELETE')
+                                                        <input type="hidden" name="event_id"
+                                                            value="{{ $schedule['event']->id }}" />
+                                                        <input type="hidden" name="gender"
+                                                            value="{{ $schedule['event']->gender }}" />
                                                         <button type="submit" class="btn btn-sm btn-error">
                                                             删除
                                                         </button>
@@ -105,27 +112,25 @@
                 <div class="text-center py-12">
                     <p class="text-gray-500 text-lg mb-4">暂无日程安排</p>
                     <p class="text-gray-400 text-sm mb-6">请先生成径赛分组，然后为每个分组安排时间</p>
-                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=field" class="btn btn-secondary">
-                        批量添加
+                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=field"
+                        class="btn btn-secondary">
+                        添加比赛
                     </a>
                 </div>
             @endif
 
             @if ($heatsWithoutSchedule->count() > 0)
-                <!-- 未安排的分组 -->
                 <div class="mt-8 border-t pt-6">
-                    <h4 class="font-bold text-xl mb-4">未安排的比赛分组</h4>
+                    <h4 class="font-bold text-xl mb-4">未安排的比赛项目</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach ($heatsWithoutSchedule as $heat)
+                        @foreach ($heatsWithoutSchedule as $eventName => $heats)
                             <div class="card bg-gray-50 border border-gray-200">
                                 <div class="card-body p-4">
                                     <h5 class="card-title text-base">
-                                        {{ $heat->grade->name }} - {{ $heat->competitionEvent->event->name }} - 第
-                                        {{ $heat->heat_number }} 组
+                                        {{ $eventName }}
                                     </h5>
                                     <p class="text-sm text-gray-600">
-                                        {{ $heat->competitionEvent->event->gender }} |
-                                        {{ $heat->lanes->count() }} 名运动员
+                                        {{ $heats->count() }} 个分组
                                     </p>
                                 </div>
                             </div>
@@ -138,8 +143,8 @@
                 <a href="{{ route('competitions.schedules.index', $competition) }}" class="btn mr-2">
                     上一步
                 </a>
-                <a href="{{ route('competitions.schedules.index-field', $competition) }}" class="btn btn-primary">
-                    下一步
+                <a href="{{ route('competitions.show', $competition) }}" class="btn btn-primary">
+                    完成
                 </a>
             </div>
         </div>
