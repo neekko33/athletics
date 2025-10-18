@@ -149,25 +149,22 @@ class ScheduleBookService
             foreach ($grade->klasses as $klass) {
                 $athletes = $klass->athletes->sortBy('number');
                 if ($athletes->count() > 0) {
-                    $content .= $klass->name . "\n";
+                    $content .= $klass->name . "\t领队：" . "\n";
 
-                    // 按性别分组
-                    $maleAthletes = $athletes->where('gender', '男');
-                    $femaleAthletes = $athletes->where('gender', '女');
+                    $athletes->each(function ($a, $index) use (&$content) {
+                        // 每5人换行
+                        $formattedName = mb_strlen($a->name, 'UTF-8') === 2
+                            ? implode('　', preg_split('//u', $a->name, -1, PREG_SPLIT_NO_EMPTY))
+                            : $a->name;
+                        $content .= $a->number . ' ' . $formattedName;
+                        if ($index > 0 && ($index + 1) % 5 == 0) {
+                            $content .= "";
+                        } else {
+                            $content .= "\t";
+                        }
+                    });
 
-                    if ($maleAthletes->count() > 0) {
-                        $athleteList = $maleAthletes->map(function ($a) {
-                            return $a->number . ' ' . $a->name;
-                        })->implode(' ');
-                        $content .= $athleteList . "\n";
-                    }
-
-                    if ($femaleAthletes->count() > 0) {
-                        $athleteList = $femaleAthletes->map(function ($a) {
-                            return $a->number . ' ' . $a->name;
-                        })->implode(' ');
-                        $content .= $athleteList . "\n";
-                    }
+                    $content .= "\n";
                 }
             }
             $content .= "\n";
@@ -181,6 +178,8 @@ class ScheduleBookService
      */
     private function generateHeatGroups(Competition $competition): string
     {
+        $middleLongDistanceEvents = ['800米', '1500米', '1000米'];
+
         $schedules = $competition->schedules()
             ->with([
                 'heat.competitionEvent.event',
@@ -223,11 +222,12 @@ class ScheduleBookService
             $genderText = $gender === '男' ? '男子组' : '女子组';
             $eventTypeText = $eventType === 'track' ? '径赛' : '田赛';
 
-            $text .= "\n{$gradeName} {$genderText} {$eventTypeText}\n";
+            $text .= "\n{$gradeName}{$genderText}{$eventTypeText}\n\n";
 
             $heatsByEvent = $gradeHeats->groupBy(fn($h) => $h->competitionEvent->event->id);
 
             $startIndex = 1;
+
             foreach ($heatsByEvent as $eventId => $eventHeats) {
                 $event = $eventHeats->first()->competitionEvent->event;
                 $eventHeatsSorted = $eventHeats->sortBy('heat_number');
@@ -238,58 +238,114 @@ class ScheduleBookService
                 $text .= ($startIndex++) . "、{$event->name}预决赛，{$totalParticipants}人" . ($eventType === 'track' ? ($totalGroups . '组') : '') . "，取{$takeCount}名\n";
 
                 foreach ($eventHeatsSorted as $heat) {
-                    if ($eventType === 'track') {
-                        // 判断是否为中长跑项目，中长跑显示序号不显示道次
-                        $middleLongDistanceEvents = ['800米', '1500米', '1000米'];
+                    // 非长跑的径赛项目，需要显示道次
+                    if ($eventType === 'track' && !in_array($event->name, $middleLongDistanceEvents)) {
                         $text .= "第" . ChineseHelper::numberToChinese($heat->heat_number) . "组\n";
+                        $text .= "道次";
+                        $laneNumbers = ['一', '二', '三', '四', '五', '六', '七', '八'];
+                        $maxLane = $heat->competitionEvent->competition->track_lanes;
+                        $text .= "      ";
 
-                        if (!in_array($event->name, $middleLongDistanceEvents)) {
-                            $text .= "道次";
-                        } else {
-                            $text .= "序号";
+                        for ($i = 0; $i < $maxLane; $i++) {
+                            if ($i > 0) {
+                                $text .= "       ";
+                            }
+                            $text .= $laneNumbers[$i];
                         }
 
-                        foreach ($heat->lanes->sortBy('lane_number') as $lane) {
-                            $laneNumbers = ['一', '二', '三', '四', '五', '六', '七', '八'];
-                            if (!in_array($event->name, $middleLongDistanceEvents)) {
-                                $text .= "\t" . $laneNumbers[$lane->lane_number - 1];
-                            } else {
-                                $text .= "\t" . $lane->lane_number;
+                        $text .= "\n";
+
+                        // 姓名行
+                        $text .= "姓名    ";
+                        foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
+                            $laneAthlete = $lane->laneAthletes->first();
+                            $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                            $index > 0 && $text .= "   ";
+                            $name = $athlete ? $athlete->name : '';
+                            $formattedName = mb_strlen($name, 'UTF-8') === 2
+                                ? implode('　', preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY))
+                                : $name;
+                            $text .= ($athlete ? $formattedName : '');
+                        }
+                        $text .= "\n";
+
+                        // 号码行
+                        $text .= "号码      ";
+                        foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
+                            $laneAthlete = $lane->laneAthletes->first();
+                            $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                            $index > 0 && $text .= "      ";
+                            $text .= ($athlete ? $athlete->number : '');
+                        }
+                        $text .= "\n";
+
+                        // 班级行
+                        $text .= "班级     ";
+                        foreach ($heat->lanes->sortBy('lane_number') as $index => $lane) {
+                            $laneAthlete = $lane->laneAthletes->first();
+                            $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                            $index > 0 && $text .= "     ";
+                            $text .= ($athlete && $athlete->klass ? ChineseHelper::classNameToChinese($athlete->klass->name) : '');
+                        }
+                        $text .= "\n\n";
+                    } else {
+                        // 超过8人时，每8人一行显示
+                        $lanesChunked = $heat->lanes->sortBy('lane_number')->chunk(8)->map(function ($chunk) {
+                            return $chunk->values();
+                        });
+
+                        foreach ($lanesChunked as $chunkIndex => $chunk) {
+                            $index = 0;
+                            // 长跑和田赛项目不显示道次
+                            $text .= "序号    ";
+                            foreach ($chunk as $index => $lane) {
+                                if ($index > 0) {
+                                    $text .= "      ";
+                                }
+                                $text .= $lane->lane_number;
+                            }
+
+                            $text .= "\n";
+
+                            // 姓名行
+                            $text .= "姓名 ";
+                            foreach ($chunk as $index => $lane) {
+                                $laneAthlete = $lane->laneAthletes->first();
+                                $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                                $index > 0 && $text .= " ";
+                                $name = $athlete ? $athlete->name : '';
+                                $formattedName = mb_strlen($name, 'UTF-8') === 2
+                                    ? implode('　', preg_split('//u', $name, -1, PREG_SPLIT_NO_EMPTY))
+                                    : $name;
+                                $text .= ($athlete ? $formattedName : '');
+                            }
+                            $text .= "\n";
+
+                            // 号码行
+                            $text .= "号码   ";
+                            foreach ($chunk as $index => $lane) {
+                                $laneAthlete = $lane->laneAthletes->first();
+                                $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                                $index > 0 && $text .= "    ";
+                                $text .= ($athlete ? $athlete->number : '');
+                            }
+                            $text .= "\n";
+
+                            // 班级行
+                            $text .= "班级  ";
+                            foreach ($chunk as $index => $lane) {
+                                $laneAthlete = $lane->laneAthletes->first();
+                                $athlete = $laneAthlete ? $laneAthlete->athlete : null;
+                                $index > 0 && $text .= "   ";
+                                $text .= ($athlete && $athlete->klass ? ChineseHelper::classNameToChinese($athlete->klass->name) : '');
+                            }
+
+                            if (($chunkIndex + 1) < $lanesChunked->count()) {
+                                $text .= "\n";
                             }
                         }
-                    } else {
-                        $text .= "序号";
-                        foreach ($heat->lanes->sortBy('lane_number') as $lane) {
-                            $text .= "\t" . $lane->lane_number;
-                        }
+                        $text .= "\n\n";
                     }
-                    $text .= "\n";
-                    // 姓名行
-                    $text .= "姓名";
-                    foreach ($heat->lanes->sortBy('lane_number') as $lane) {
-                        $laneAthlete = $lane->laneAthletes->first();
-                        $athlete = $laneAthlete ? $laneAthlete->athlete : null;
-                        $text .= "\t" . ($athlete ? $athlete->name : '');
-                    }
-                    $text .= "\n";
-
-                    // 号码行
-                    $text .= "号码";
-                    foreach ($heat->lanes->sortBy('lane_number') as $lane) {
-                        $laneAthlete = $lane->laneAthletes->first();
-                        $athlete = $laneAthlete ? $laneAthlete->athlete : null;
-                        $text .= "\t" . ($athlete ? $athlete->number : '');
-                    }
-                    $text .= "\n";
-
-                    // 班级行
-                    $text .= "班级";
-                    foreach ($heat->lanes->sortBy('lane_number') as $lane) {
-                        $laneAthlete = $lane->laneAthletes->first();
-                        $athlete = $laneAthlete ? $laneAthlete->athlete : null;
-                        $text .= "\t" . ($athlete && $athlete->klass ? ChineseHelper::classNameToChinese($athlete->klass->name) : '');
-                    }
-                    $text .= "\n";
                 }
             }
         }
