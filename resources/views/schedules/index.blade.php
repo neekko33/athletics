@@ -21,6 +21,7 @@
             <div class="flex justify-between items-center mb-8">
                 <h3 class="text-2xl font-bold">日程安排 - 径赛</h3>
             </div>
+            <livewire:schedule-list :$competition />
             @if ($schedules->count() > 0)
                 <!-- 日程列表 -->
                 <div class="mb-8">
