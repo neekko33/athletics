@@ -3,7 +3,48 @@
 @section('title', '日程安排')
 
 @section('content')
-    <div class="container mx-auto max-w-7xl">
+    <div class="container mx-auto max-w-7xl" x-data="{ showAlert: false, type: 'success', message: 'Test success message here !' }"
+        x-on:alert="
+            ({ detail }) => {
+                type = detail[0].type;
+                message = detail[0].message;
+                showAlert = true;
+                setTimeout(() => showAlert = false, 3000);
+            }
+        ">
+        <div
+            x-show="showAlert"
+            x-transition:enter="transition ease-out duration-700"
+            x-transition:enter-start="opacity-0 -translate-y-2"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-700"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 -translate-y-2"
+            role="alert"
+            class="alert fixed z-10 top-20 w-1/3 left-1/2 -translate-x-1/2"
+            :class="{
+                'alert-success': type === 'success',
+                'alert-error': type === 'error',
+                'alert-warning': type === 'warning',
+            }">
+            <svg x-show="type === 'success'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current"
+                fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg x-show="type === 'error'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none"
+                viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <svg x-show="type === 'warning'" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current"
+                fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+
+            <span x-text="message"></span>
+        </div>
         <!-- 步骤条 -->
         <div class="mb-6">
             <ul class="steps w-full">
@@ -22,124 +63,6 @@
                 <h3 class="text-2xl font-bold">日程安排 - 径赛</h3>
             </div>
             <livewire:schedule-list :$competition />
-            @if ($schedules->count() > 0)
-                <!-- 日程列表 -->
-                <div class="mb-8">
-                    @foreach ($schedulesByDate as $date => $daySchedules)
-                        <div class="mb-8">
-                            <h4 class="text-2xl font-bold mb-4 flex items-center">
-                                <span class="badge badge-primary badge-lg mr-3">
-                                    {{ \Carbon\Carbon::parse($date)->format('m月d日') }}
-                                </span>
-                                <span class="text-gray-600 text-base font-normal">
-                                    星期{{ ['日', '一', '二', '三', '四', '五', '六'][\Carbon\Carbon::parse($date)->dayOfWeek] }}
-                                </span>
-                                <span class="ml-auto text-sm font-normal text-gray-500 mr-4">
-                                    共 {{ $daySchedules->count() }} 场比赛
-                                </span>
-                                <form
-                                    action="{{ route('competitions.schedules.destroy-all', [$competition]) }}"
-                                    method="POST" onsubmit="return confirm('确定删除当天所有日程吗？')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <input type="hidden" name="date" value="{{ $date }}"/>
-                                    <input type="hidden" name="event_type" value="track"/>
-                                    <button type="submit" class="btn btn-error btn-dash mr-4">
-                                        清空当天日程
-                                    </button>
-                                </form>
-                                <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?date={{ $date }}&type=track"
-                                   class="btn btn-primary">
-                                    添加比赛
-                                </a>
-                            </h4>
-                            <table class="table w-full">
-                                <thead>
-                                <tr>
-                                    <th>时间</th>
-                                    <th>比赛项目</th>
-                                    <th>性别</th>
-                                    <th>分组数量</th>
-                                    <th>操作</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                @foreach ($daySchedules as $eventName => $schedule)
-                                    <tr class="hover">
-                                        <td class="whitespace-nowrap">
-                                            <div class="flex gap-1">
-                                                <div class="font-medium">{{ $schedule['scheduled_at']->format('H:i') }}
-                                                </div>
-                                                @if ($schedule['end_at'])
-                                                    <div class="text-sm text-gray-500">
-                                                        ~ {{$schedule['end_at']->format('H:i') }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="font-medium">{{ $schedule['event']->name }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="font-medium">{{ $schedule['event']->gender }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="font-medium">{{ $schedule['schedules']->count() }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="flex space-x-2">
-                                                <form
-                                                    action="{{ route('competitions.schedules.destroy', [$competition]) }}"
-                                                    method="POST" onsubmit="return confirm('确定删除此日程吗？')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <input type="hidden" name="event_id"
-                                                           value="{{$schedule['event']->id}}"/>
-                                                    <input type="hidden" name="gender"
-                                                           value="{{$schedule['event']->gender}}"/>
-                                                    <button type="submit" class="btn btn-sm btn-error">
-                                                        删除
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endforeach
-                </div>
-            @else
-                <div class="text-center py-12">
-                    <p class="text-gray-500 text-lg mb-4">暂无日程安排</p>
-                    <p class="text-gray-400 text-sm mb-6">请先生成径赛分组，然后为每个分组安排时间</p>
-                    <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=track"
-                       class="btn btn-secondary">
-                        添加比赛
-                    </a>
-                </div>
-            @endif
-
-            @if ($heatsWithoutSchedule->count() > 0)
-                <div class="mt-8 border-t pt-6">
-                    <h4 class="font-bold text-xl mb-4">未安排的比赛项目</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach ($heatsWithoutSchedule as $eventName => $heats)
-                            <div class="card bg-gray-50 border border-gray-200">
-                                <div class="card-body p-4">
-                                    <h5 class="card-title text-base">
-                                        {{ $eventName }}
-                                    </h5>
-                                    <p class="text-sm text-gray-600">
-                                        {{ $heats->count() }} 个分组
-                                    </p>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
             <!-- 底部导航 -->
             <div class="w-full flex justify-end mt-8">
                 <a href="{{ route('competitions.heats.index', $competition) }}" class="btn mr-2">

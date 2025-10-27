@@ -1,4 +1,4 @@
-<div class="mb-8 border-b">
+<div class="mb-8">
     @if ($schedulesByDate->isNotEmpty())
         @foreach ($schedulesByDate as $date => $daySchedules)
             <div class="mb-8">
@@ -69,10 +69,6 @@
         <div class="text-center py-12">
             <p class="text-gray-500 text-lg mb-4">暂无日程安排</p>
             <p class="text-gray-400 text-sm mb-6">请先生成径赛分组，然后为每个分组安排时间</p>
-            <a href="{{ route('competitions.schedules.bulk-new', $competition) }}?type=track"
-                class="btn btn-secondary">
-                添加比赛
-            </a>
         </div>
     @endif
 

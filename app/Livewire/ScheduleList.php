@@ -9,6 +9,8 @@ use App\Models\Schedule;
 use App\Models\Athlete;
 use Illuminate\Support\Facades\DB;
 
+use function PHPSTORM_META\type;
+
 class ScheduleList extends Component
 {
     public $schedulesByDate = [];
@@ -115,6 +117,11 @@ class ScheduleList extends Component
             });
         $schedulesToDelete->delete();
         $this->refreshSchedules();
+
+        $this->dispatch(
+            'alert',
+            ['type' => 'success', 'message' => '已清除当天所有日程']
+        );
     }
 
     public function deleteSchedule($event_id)
@@ -175,10 +182,11 @@ class ScheduleList extends Component
         try {
             $startDateTime = Carbon::parse($this->scheduleStartDate . ' ' . $this->scheduleStartTime);
         } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->with('error', '时间格式错误')
-                ->withInput();
+            $this->dispatch(
+                'alert',
+                ['type' => 'error', 'message' => '无效的开始时间格式']
+            );
+            return;
         }
 
         $createdCount = 0;
@@ -229,9 +237,19 @@ class ScheduleList extends Component
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
+            $this->dispatch(
+                'alert',
+                ['type' => 'error', 'message' => '添加日程失败: ' . $e->getMessage()]
+            );
+            return;
         }
 
         $this->isModalOpen = false;
         $this->refreshSchedules();
+
+        $this->dispatch(
+            'alert',
+            ['type' => 'success', 'message' => '日程添加成功']
+        );
     }
 }

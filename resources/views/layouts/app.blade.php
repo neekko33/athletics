@@ -51,7 +51,8 @@
                             @endif
                             <div class="divider my-1"></div>
                             <li>
-                                <form action="{{ route('logout') }}" method="POST" class="w-full flex items-center justify-center">
+                                <form action="{{ route('logout') }}" method="POST"
+                                    class="w-full flex items-center justify-center">
                                     @csrf
                                     <button type="submit" class="w-full cursor-pointer text-error font-bold">
                                         退出登录
