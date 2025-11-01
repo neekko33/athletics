@@ -6,24 +6,24 @@ use Livewire\Component;
 use Carbon\Carbon;
 use App\Models\Heat;
 use App\Models\Schedule;
-use App\Models\Athlete;
 use Illuminate\Support\Facades\DB;
-
-use function PHPSTORM_META\type;
 
 class ScheduleList extends Component
 {
     public $schedulesByDate = [];
     public $competition;
     public $heatsWithoutSchedule = [];
-    public $eventType = 'track';
+    public $eventType;
 
+    public $isEditMode = false;
+    public $eventId;
     public $isModalOpen = false;
     public $scheduleTitle;
     public $scheduleStartDate;
-    public $scheduleStartTime = '08:30';
+    public $scheduleStartTime;
     public $scheduleEndTime;
     public $scheduleAvgTime;
+    public $editSchedulesCount = 0;
 
     private function groupSchedulesByEventAndGender($schedules)
     {
@@ -131,6 +131,32 @@ class ScheduleList extends Component
         });
         $schedulesToDelete->delete();
         $this->refreshSchedules();
+
+        $this->dispatch(
+            'alert',
+            ['type' => 'success', 'message' => '已清除日程']
+        );
+    }
+
+    public function editSchedule($event_id)
+    {
+        $schedules = $this->competition->schedules()->whereHas('heat.competitionEvent.event', function ($query) use ($event_id) {
+            $query->where('id', $event_id);
+        })->get();
+        $schedule = $schedules->first();
+        if ($schedule) {
+            $this->editSchedulesCount = count($schedules);
+            $this->isEditMode = true;
+            $this->eventId = $event_id;
+            $event = $schedule->heat->competitionEvent->event;
+            $this->scheduleTitle = $event->gender . '子' . $event->name . '预决赛';
+            $this->scheduleStartDate = $schedule->scheduled_at->format('Y-m-d');
+            $this->scheduleStartTime = $schedule->scheduled_at->format('H:i');
+            $this->scheduleAvgTime = $event->avg_time;
+            $this->getScheduleEndTime($this->scheduleStartTime, $this->editSchedulesCount, $this->scheduleAvgTime);
+
+            $this->isModalOpen = true;
+        }
     }
 
     private function getScheduleEndTime($startTime, $numberOfHeats, $avgTime)
@@ -141,21 +167,95 @@ class ScheduleList extends Component
         $this->scheduleEndTime = $end->format('H:i');
     }
 
+    private function getLatestScheduleEndTimeByDate($date)
+    {
+        $carbonDate = Carbon::parse($date);
+        $latestSchedule = $this->competition->schedules()
+            ->whereHas('heat.competitionEvent.event', function ($query) {
+                $query->where('event_type', '=', $this->eventType);
+            })
+            ->whereDate('scheduled_at', $carbonDate)
+            ->orderBy('end_at', 'desc')
+            ->first();
+
+        if ($latestSchedule) {
+            return $latestSchedule->end_at->format('H:i');
+        }
+
+        return null;
+    }
+
+    public function updatedScheduleStartDate($value)
+    {
+        $this->scheduleStartTime = $this->getLatestScheduleEndTimeByDate($value) ?? '08:30';
+    }
+
     public function updatedScheduleStartTime($value)
     {
+        if ($this->isEditMode) {
+            $this->getScheduleEndTime($value, $this->editSchedulesCount, $this->scheduleAvgTime);
+            return;
+        }
         $this->getScheduleEndTime($value, count($this->heatsWithoutSchedule[$this->scheduleTitle]), $this->scheduleAvgTime);
     }
 
     public function openModal($eventName)
     {
+        $this->isEditMode = false;
         $this->scheduleTitle = $eventName;
         $this->scheduleStartDate = $this->competition->start_date->format('Y-m-d');
-        $this->scheduleStartTime = '08:30';
+        $this->scheduleStartTime = $this->getLatestScheduleEndTimeByDate($this->scheduleStartDate) ?? '08:30';
         $event = $this->heatsWithoutSchedule[$eventName][0]['competition_event']['event'];
         $this->scheduleAvgTime = $event['avg_time'];
         $this->getScheduleEndTime($this->scheduleStartTime, count($this->heatsWithoutSchedule[$eventName]), $this->scheduleAvgTime);
 
         $this->isModalOpen = true;
+    }
+
+    public function updateSchedule($event_id)
+    {
+        $schedules = $this->competition->schedules()->whereHas('heat.competitionEvent.event', function ($query) use ($event_id) {
+            $query->where('id', $event_id);
+        })->get();
+
+        // 解析开始时间
+        try {
+            $startDateTime = Carbon::parse($this->scheduleStartDate . ' ' . $this->scheduleStartTime);
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'alert',
+                ['type' => 'error', 'message' => '无效的开始时间格式']
+            );
+            return;
+        }
+
+        DB::beginTransaction();
+        try {
+            $currentTime = $startDateTime->copy();
+            foreach ($schedules as $schedule) {
+                $schedule->scheduled_at = $currentTime->copy();
+                $schedule->end_at = $currentTime->copy()->addMinutes($this->scheduleAvgTime);
+                $schedule->save();
+
+                $currentTime = $currentTime->copy()->addMinutes($this->scheduleAvgTime);
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->dispatch(
+                'alert',
+                ['type' => 'error', 'message' => '更新日程失败: ' . $e->getMessage()]
+            );
+            return;
+        }
+
+        $this->isModalOpen = false;
+        $this->refreshSchedules();
+
+        $this->dispatch(
+            'alert',
+            ['type' => 'success', 'message' => '日程更新成功']
+        );
     }
 
     public function saveSchedule()
@@ -195,35 +295,6 @@ class ScheduleList extends Component
         DB::beginTransaction();
         try {
             foreach ($heats as $heat) {
-                // 当添加日程时，检查同一时间段的另一种比赛中是否有重复的运动员
-                $otherEventType = $this->eventType === 'field' ? 'track' : 'field';
-                $conflictingSchedules = Schedule::whereHas('heat.competitionEvent.event', function ($q) use ($otherEventType) {
-                    $q->where('event_type', $otherEventType);
-                })
-                    ->where(function ($q) use ($currentTime, $avgTime) {
-                        $q->whereBetween('scheduled_at', [$currentTime, $currentTime->copy()->addMinutes($avgTime)])
-                            ->orWhereBetween('end_at', [$currentTime, $currentTime->copy()->addMinutes($avgTime)]);
-                    })
-                    ->get();
-
-                foreach ($conflictingSchedules as $schedule) {
-                    $trackAthleteIds = $schedule->heat->lanes->flatMap(function ($lane) {
-                        return $lane->laneAthletes->pluck('athlete_id');
-                    })->unique()->toArray();
-
-                    $fieldAthleteIds = $heat->lanes->flatMap(function ($lane) {
-                        return $lane->laneAthletes->pluck('athlete_id');
-                    })->unique()->toArray();
-
-                    if (count(array_intersect($trackAthleteIds, $fieldAthleteIds)) > 0) {
-                        $errorAthletes = Athlete::whereIn('id', array_intersect($trackAthleteIds, $fieldAthleteIds))->get();
-                        $errorNames = $errorAthletes->map(function ($athlete) {
-                            return $athlete->name . ' ';
-                        })->join(', ');
-
-                        throw new \Exception("时间冲突，运动员 {$errorNames} 在同一时间段内有多个项目安排");
-                    }
-                }
                 Schedule::create([
                     'heat_id' => $heat->id,
                     'scheduled_at' => $currentTime->copy(),

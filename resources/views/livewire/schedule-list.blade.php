@@ -53,6 +53,10 @@
                                 </td>
                                 <td>
                                     <div class="flex space-x-2">
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            wire:click="editSchedule({{ $schedule['event']->id }})">
+                                            编辑
+                                        </button>
                                         <button type="button" class="btn btn-sm btn-error" wire:confirm="确定删除该日程吗？"
                                             wire:click="deleteSchedule({{ $schedule['event']->id }})">
                                             删除
@@ -98,14 +102,14 @@
         <dialog id="my_modal" class="modal modal-open">
             <div class="modal-box">
                 <div>
-                    <h1 class="font-bold text-2xl mb-6">添加日程 - {{ $scheduleTitle }}</h1>
+                    <h1 class="font-bold text-2xl mb-6">{{ $isEditMode ? '编辑' : '新建' }}日程 - {{ $scheduleTitle }}</h1>
 
                     <!-- 开始日期 -->
                     <div class="my-5">
                         <label for="start_date" class="label">
                             <span class="label-text">开始日期</span>
                         </label>
-                        <input type="date" name="start_date" id="start_date" wire:model="scheduleStartDate"
+                        <input type="date" name="start_date" id="start_date" wire:model.live="scheduleStartDate"
                             min="{{ $competition->start_date->format('Y-m-d') }}"
                             max="{{ $competition->end_date->format('Y-m-d') }}"
                             class="input input-bordered block mt-2 w-full" required>
@@ -126,8 +130,13 @@
                             <span class="label-text">时间预览</span>
                         </label>
                         <div class="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg mt-2 text-sm">
-                            将安排 <strong
-                                id="preview-count">{{ $scheduleTitle ? count($heatsWithoutSchedule[$scheduleTitle]) : 0 }}</strong>
+                            将安排
+                            @if ($isEditMode)
+                                <strong id="preview-count">{{ $editSchedulesCount ?? 0 }}</strong>
+                            @else
+                                <strong
+                                    id="preview-count">{{ $scheduleTitle ? count($heatsWithoutSchedule[$scheduleTitle]) : 0 }}</strong>
+                            @endif
                             个分组，
                             从 <strong id="preview-start">{{ $scheduleStartTime }}</strong> 开始，
                             预计到 <strong id="preview-end"> {{ $scheduleEndTime }}</strong> 结束
@@ -147,7 +156,11 @@
                 </div>
 
                 <div class="modal-action">
-                    <button class="btn btn-primary" wire:click="saveSchedule">保存</button>
+                    @if ($isEditMode)
+                        <button class="btn btn-primary" wire:click="updateSchedule({{ $eventId }})">保存</button>
+                    @else
+                        <button class="btn btn-primary" wire:click="saveSchedule">保存</button>
+                    @endif
                     <button class="btn" wire:click="$set('isModalOpen', false)">取消</button>
                 </div>
             </div>
